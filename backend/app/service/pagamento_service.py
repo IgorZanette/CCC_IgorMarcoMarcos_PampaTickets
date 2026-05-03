@@ -6,6 +6,8 @@ from app.integrations.asaas import charges as asaas_charges
 from app.models.pagamento import MetodoPagamento, StatusPagamento
 from app.models.pedido import Pedido, StatusPedido
 from app.repositories import pagamento_repo
+from app.service.ingresso_service import gerar_pdf_ingresso_upload
+from app.repositories import ingresso_repo
 
 
 async def criar_pagamento(
@@ -61,6 +63,9 @@ async def processar_webhook(db: AsyncSession, *, evento: str, payment_id: str) -
         )
         await _atualizar_status_pedido(db, pagamento.pedido_id, StatusPedido.PAGO)
 
+        # Gerar PDFs dos ingressos automaticamente
+        await _gerar_pdfs_ingressos(db, pagamento.pedido_id)
+
     elif evento == "PAYMENT_OVERDUE":
         await pagamento_repo.update_status(db, pagamento, StatusPagamento.RECUSADO)
         await _atualizar_status_pedido(db, pagamento.pedido_id, StatusPedido.CANCELADO)
@@ -79,3 +84,20 @@ async def _atualizar_status_pedido(
     if result is not None:
         result.status = novo_status
         await db.commit()
+
+
+async def _gerar_pdfs_ingressos(db: AsyncSession, pedido_id: str) -> None:
+    """
+    Gera PDFs para todos os ingressos de um pedido pago.
+    """
+    try:
+        # Buscar ingressos do pedido
+        ingressos = await ingresso_repo.get_by_pedido_id(db, pedido_id)
+
+        # Gerar PDF para cada ingresso
+        for ingresso in ingressos:
+            await gerar_pdf_ingresso_upload(db, str(ingresso.id))
+
+    except Exception as e:
+        # Log do erro, mas não falha o webhook
+        pass

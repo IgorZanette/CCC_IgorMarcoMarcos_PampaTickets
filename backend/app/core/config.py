@@ -12,17 +12,17 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
-    # # Supabase Storage
-    # SUPABASE_URL: str
-    # SUPABASE_KEY: str
-    # SUPABASE_BUCKET_INGRESSOS: str = "ingressos"
-    # SUPABASE_BUCKET_CERTIFICADOS: str = "certificados"
-    # SUPABASE_BUCKET_RELATORIOS: str = "relatorios"
+    # Supabase Storage
+    SUPABASE_URL: str | None = None
+    SUPABASE_KEY: str | None = None
+    SUPABASE_BUCKET_INGRESSOS: str = "ingressos"
+    SUPABASE_BUCKET_CERTIFICADOS: str = "certificados"
+    SUPABASE_BUCKET_RELATORIOS: str = "relatorios"
 
     # Asaas (gateway de pagamento)
     ASAAS_API_KEY: str
     ASAAS_BASE_URL_UAT: str
-    # ASAAS_WEBHOOK_TOKEN: str
+    ASAAS_WEBHOOK_TOKEN: str | None = None
 
     # # Meta Cloud API — WhatsApp Business
     # META_WHATSAPP_TOKEN: str
