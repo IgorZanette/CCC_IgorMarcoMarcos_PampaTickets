@@ -19,7 +19,9 @@ export const HomePage = () => {
 
   const featured = events[0];
   const trending = events.slice(0, 4);
-  const week = [events[2] ?? events[0], events[4] ?? events[1], events[1], events[3] ?? events[0]];
+  const week = [events[2], events[4], events[1], events[3]].filter(
+    (e): e is EventoSample => e !== undefined,
+  );
   const ending = events.filter((e) => e.urgente || e.vendidos > 0.85).slice(0, 4);
 
   return (
