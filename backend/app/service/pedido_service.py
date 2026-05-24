@@ -14,6 +14,7 @@ from app.models.pagamento import MetodoPagamento, Reembolso, StatusPagamento
 from app.models.pedido import Pedido, PedidoItem, StatusPedido
 from app.models.usuario import Usuario
 from app.repositories import (
+    cupom_repo,
     evento_repo,
     ingresso_repo,
     lote_repo,
@@ -22,7 +23,7 @@ from app.repositories import (
     reembolso_repo,
 )
 from app.schemas.pedido import PedidoCreate
-from app.service import cancelamento_service, pagamento_service
+from app.service import cancelamento_service, cupom_service, pagamento_service
 
 
 async def criar(db: AsyncSession, participante: Usuario, data: PedidoCreate) -> dict:
@@ -76,11 +77,23 @@ async def criar(db: AsyncSession, participante: Usuario, data: PedidoCreate) -> 
         valor_total += float(lote.preco) * item.quantidade
         lotes_validos.append((lote, item.quantidade))
 
+    cupom = None
+    valor_desconto = 0.0
+    if data.cupom_codigo:
+        cupom, valor_desconto = await cupom_service.validar_e_calcular_desconto(
+            db,
+            evento_id=evento.id,
+            codigo=data.cupom_codigo,
+            valor_base=valor_total,
+        )
+        valor_total = round(valor_total - valor_desconto, 2)
+
     pedido = Pedido(
         participante_id=participante.id,
         evento_id=evento.id,
+        cupom_id=cupom.id if cupom is not None else None,
         valor_total=valor_total,
-        valor_desconto=0.0,
+        valor_desconto=valor_desconto,
     )
     db.add(pedido)
     await db.flush()
@@ -96,6 +109,9 @@ async def criar(db: AsyncSession, participante: Usuario, data: PedidoCreate) -> 
         )
         lote_repo.incrementar_vendidas(lote, qtd)
 
+    if cupom is not None:
+        cupom_repo.incrementar_usado(cupom)
+
     await db.commit()
     await db.refresh(pedido)
 
@@ -109,6 +125,8 @@ async def criar(db: AsyncSession, participante: Usuario, data: PedidoCreate) -> 
     except AsaasAPIError as exc:
         for lote, qtd in lotes_validos:
             lote_repo.decrementar_vendidas(lote, qtd)
+        if cupom is not None:
+            cupom_repo.decrementar_usado(cupom)
         pedido.status = StatusPedido.CANCELADO
         await db.commit()
         if exc.is_client_error:

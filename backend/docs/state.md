@@ -7,7 +7,7 @@
 
 ## Última atualização
 
-**Data:** 11/05/2026
+**Data:** 24/05/2026
 **Responsável:** Marco Antonio Santolin
 
 ---
@@ -18,8 +18,8 @@
 - [x] UC02 — Gerenciamento de Eventos
 - [x] UC03 — Gerenciamento de Ingressos/Lotes
 - [x] UC04 — Check-in via QR Code
-- [ ] UC05 — Cupons de desconto
-- [ ] UC06 — Cortesias
+- [x] UC05 — Cupons de desconto
+- [x] UC06 — Cortesias
 - [x] UC07 — Busca e Compra de Ingressos
 - [x] UC09 — Pagamento via Asaas
 - [x] UC10 — Reembolso
@@ -34,18 +34,17 @@
 
 ## Em progresso
 
-Ciclo financeiro completo: compra → pagamento → cancelamento (manual e por OVERDUE) → reembolso. Falta validação end-to-end do UC10 em sandbox — o usuário marcou pra rodar depois.
+Nada em aberto. Próximo ciclo é UC14 (relatório financeiro PDF) ou UC15 (WhatsApp), conforme prioridade do dono do produto.
 
 ---
 
 ## Próximo passo
 
-1. **Validar UC10 em sandbox**: rodar o roteiro de smoke (POST /api/pedidos/{id}/reembolso) e confirmar que webhook PAYMENT_REFUNDED cancela ingressos.
-2. **UC05 — Cupons de desconto**: modelo `Cupom` já existe em [app/models/cupom.py](../app/models/cupom.py); falta repositório, service, rotas CRUD e aplicação no fluxo de `POST /api/pedidos`.
-3. **UC06 — Cortesias**: modelo `Cortesia` já existe em [app/models/cortesia.py](../app/models/cortesia.py); falta CRUD para o organizador emitir.
-4. **UC14 — Relatório Financeiro PDF**: reaproveitar `app/reports/` e `supabase_storage` introduzidos no UC12/UC13.
-5. **UC15 — Notificações WhatsApp**: criar `app/integrations/whatsapp/` (Meta Cloud API) e disparar em webhook/check-in/pagamento.
-6. **Reembolso em massa pelo organizador**: quando o organizador cancela um evento (`PATCH /api/eventos/{id}/cancelar`), os pedidos pagos do evento não são reembolsados automaticamente. Fluxo simétrico ao UC10 atual, mas iterando sobre todos os pedidos PAGO.
+1. **UC14 — Relatório Financeiro PDF**: reaproveitar `app/reports/` e `supabase_storage` (bucket `relatorios/` privado). Endpoint para o organizador emitir relatório por evento (vendas, reembolsos, ticket médio, ocupação por lote).
+2. **UC15 — Notificações WhatsApp**: criar `app/integrations/whatsapp/` (Meta Cloud API) e disparar em pagamento confirmado, check-in realizado, véspera do evento e cancelamento de evento.
+3. **Reembolso em massa pelo organizador**: quando o organizador cancela um evento (`PATCH /api/eventos/{id}/cancelar`), os pedidos pagos do evento não são reembolsados automaticamente. Fluxo simétrico ao UC10 atual, iterando sobre todos os pedidos PAGO.
+4. **Validar UC10 em sandbox**: rodar o roteiro de smoke (POST /api/pedidos/{id}/reembolso) e confirmar que webhook PAYMENT_REFUNDED cancela ingressos — pendência arrastada desde 11/05.
+5. **Suíte de testes**: ainda não existe. Vai virar dívida crítica antes do deploy.
 
 ---
 
@@ -106,8 +105,12 @@ Ciclo financeiro completo: compra → pagamento → cancelamento (manual e por O
 - **`DatetimeUTC` type alias para schemas** (11/05/2026 — Marco): novo `app/schemas/_types.py` exporta `DatetimeUTC = Annotated[datetime, AfterValidator(_assumir_utc)]`. Schemas que recebem datetime de input (`LoteCreate`, `LoteUpdate`, `EventoCreate`, `EventoUpdate`) usam esse tipo. Necessário porque o frontend manda ISO sem tz (`"2026-12-31T20:00:00"`), Pydantic gera naive, mas o banco e o `pedido_service.criar` agora trabalham com aware — comparações estouravam `TypeError: can't compare offset-naive and offset-aware datetimes`. O validator assume UTC quando vier naive. Decisão: projeto inteiro opera em UTC; se algum dia houver display em horário local, a conversão fica no frontend.
 - **Helper `aware_utc` defensivo nos services** (11/05/2026 — Marco): novo `app/core/datetime_utils.py` exporta `aware_utc(dt)` que normaliza datetime naive → aware UTC. Aplicado nos 3 únicos call sites de comparação de datetime nos services: `pedido_service.criar` (janela de venda do lote) e `lote_service._validar_datas_venda` (datas de venda vs `evento.data_inicio`). Defesa em profundidade: mesmo com banco em `timestamptz` e schemas em `DatetimeUTC`, dados legados ou retornos inesperados do asyncpg podem vir naive. `aware_utc` é no-op se já for aware. Padrão a ser seguido em qualquer comparação futura de datetime.
 - **Fluxo init_db + Alembic clarificado** (11/05/2026 — Marco): `init_db()` no startup faz `Base.metadata.create_all`, que cria tabelas faltantes mas **não** roda migrations Alembic e **não** popula `alembic_version`. Pra gerar/aplicar migrations corretamente é preciso (a) zerar o banco, (b) subir só o `db`, (c) rodar `alembic upgrade head` via `docker compose run --rm api`, (d) só então subir a `api`. Caminho documentado caso outro dev precise gerar migration nova.
+- **UC05 completo — Cupons de desconto** (24/05/2026 — Marco): CRUD completo do organizador em [app/api/routes/cupons.py](../app/api/routes/cupons.py) (POST/GET por evento, GET/PUT/DELETE individual) + endpoint público de **preview** `POST /api/eventos/{evento_id}/cupons/validar` (qualquer autenticado consulta valor de desconto sem persistir). Service [app/service/cupom_service.py](../app/service/cupom_service.py) expõe `validar_e_calcular_desconto` reaproveitado pelo preview e pelo `pedido_service.criar`. PedidoCreate ganhou `cupom_codigo` opcional; quando informado, valida (404/409 expirado/esgotado), aplica desconto, persiste `pedido.cupom_id` e `pedido.valor_desconto`, ajusta `valor_total` enviado pro Asaas e incrementa `cupom.quantidade_usada`. PERCENTUAL aceita até 100; VALOR_FIXO usa `min(valor_desconto, valor_base)`. `cancelamento_service.aplicar_cancelamento` agora devolve cupom (decrementa `quantidade_usada`) — simétrico ao estoque do lote. Reembolso (PAYMENT_REFUNDED) deliberadamente NÃO devolve cupom (anti-fraude). DELETE bloqueia se `quantidade_usada > 0` (409 com sugestão de desativar via PUT). Migration `2b9f6ccda677_unique_codigo_cupom_por_evento` adiciona `UNIQUE(codigo, evento_id)` — duplicata vira 409.
+- **UC06 completo — Cortesias** (24/05/2026 — Marco): CRUD do organizador em [app/api/routes/cortesias.py](../app/api/routes/cortesias.py). Emissão recebe `{lote_id, email_beneficiado, motivo?}`, valida ownership do evento, evento PUBLICADO, `now < evento.data_inicio`, lote ativo + estoque, beneficiado cadastrado (404 se não), e bloqueia auto-emissão (422). Atômico no mesmo commit: cria `Ingresso` sem `pedido_item_id` (qr_code_hash único, status ATIVO), cria `Cortesia` com `ingresso_id`, incrementa `lote.quantidade_vendida`. Após commit dispara `gerar_pdf_ingresso_upload` (best-effort, já loga via `logger.exception`). `CortesiaResponse` desnormaliza `beneficiado_email/nome` e `lote_nome` via `from_cortesia()`. Cancelar (DELETE) bloqueia se ingresso UTILIZADO; senão marca ingresso CANCELADO, devolve estoque e deleta a cortesia. Modelo `Cortesia` ganhou relationships `beneficiado/lote/ingresso` (apenas metadata SQLAlchemy, sem migration). Migration `be566b79592c_ingresso_pedido_item_id_nullable` torna `ingressos.pedido_item_id` nullable — ingresso passa a vir de pedido OU de cortesia (decisão explícita ao invés de criar PedidoItem dummy).
+- **Bug grave do UC04 resolvido — Checkin não era persistido** (24/05/2026 — Marco): `validar_checkin` apenas mudava `ingresso.status` para UTILIZADO mas nunca criava linha em `checkins`. Tabela órfã desde 03/05. Pior: endpoint era público — qualquer um com o `qr_code_hash` invalidava ingressos. Fix: novo [app/repositories/checkin_repo.py](../app/repositories/checkin_repo.py); `validar_checkin` agora exige `usuario: Usuario`, valida `ingresso.lote.evento.organizador_id == usuario.id` (403 se não), e persiste `Checkin` antes do `update_status`. Endpoint passou a exigir `OrganizadorUser`, recebe `qr_code_hash` em body JSON (via `CheckinRequest`) — não mais query param —, e responde `CheckinResponse` com `checkin_id` e `realizado_em`. Levanta HTTPException específicas: 404 (não existe), 403 (organizador errado), 409 (UTILIZADO/CANCELADO com mensagens distintas). Idempotência natural: 2ª chamada vira 409 porque ingresso já está UTILIZADO. Sem perfil STAFF ainda — só o organizador dono opera; fica como follow-up se for delegar para portaria.
+- **Bug do UC13 resolvido — Certificado não era persistido** (24/05/2026 — Marco): mesma natureza do bug acima — `gerar_pdf_certificado_upload` fazia upload no Supabase e retornava a URL mas nunca criava linha em `certificados`. Havia até comentário `# await ingresso_repo.update_certificado_url(...)` mostrando que a persistência foi adiada e esquecida. Fix: novo [app/repositories/certificado_repo.py](../app/repositories/certificado_repo.py) (`create` + `get_by_ingresso_id`). A função agora, após upload bem-sucedido, checa idempotência via `get_by_ingresso_id` e persiste `Certificado(ingresso_id, participante_id, pdf_url)`. Mantida dentro do `try/except logger.exception` — degradação silenciosa preservada se Supabase indisponível. Sem unique constraint em `certificados.ingresso_id` ainda — fica como follow-up se aparecer race condition real.
 
-- **Testes**: ausência de suíte de testes para o fluxo de autenticação (UC01).
+- **Testes**: ausência de suíte de testes para o fluxo de autenticação (UC01) e demais UCs.
 - **Refresh token**: definir se será implementado e qual estratégia (rotate/revoke).
 - **Rate limiting** nos endpoints `/login` e `/cadastro`.
 - **Validação de força de senha** no cadastro.
@@ -115,8 +118,12 @@ Ciclo financeiro completo: compra → pagamento → cancelamento (manual e por O
 - ~~**Logs estruturados**~~ resolvido: loguru + `LoggingMiddleware` loga cada request. ~~Tratamento global de exceções~~ também resolvido em 11/05/2026 via `@app.exception_handler(Exception)` em `main.py`.
 - **CORS em produção**: middleware habilitado, mas as origens precisam ser revistas antes de qualquer deploy.
 - ~~**Seed de dados** para desenvolvimento~~ resolvido em 11/05/2026: `make seed` cria organizador e participante fixos. Idempotente.
-- **Modelos sem rotas**: `Cupom` (UC05), `Cortesia` (UC06), `Relatorio` (UC14), `FotoEvento`/`CompraFoto` (UC08) — modelos ORM existem mas faltam repositório/service/rotas.
+- **Modelos sem rotas restantes**: `Relatorio` (UC14), `FotoEvento`/`CompraFoto` (UC08) — modelos ORM existem mas faltam repositório/service/rotas. ~~`Cupom` (UC05)~~ e ~~`Cortesia` (UC06)~~ resolvidos em 24/05/2026.
 - **UC15 não iniciado**: integração com Meta Cloud API (WhatsApp) precisa ser criada do zero em `app/integrations/whatsapp/`.
 - ~~**`PAYMENT_REFUNDED` não cancela ingressos**~~ resolvido no UC10: agora cancela todos os ingressos do pedido reembolsado.
 - ~~**`gerar_pdf_ingresso_upload` engole exceções silenciosamente**~~ resolvido em 11/05/2026: aplicado em todos os call sites (`gerar_pdf_ingresso_upload`, `gerar_pdf_certificado_upload`, `validar_checkin`, `_gerar_pdfs_ingressos`) via `logger.exception`.
+- ~~**Tabela `checkins` órfã**~~ resolvido em 24/05/2026: `validar_checkin` persiste `Checkin` via `checkin_repo.create` antes do update de status.
+- ~~**Tabela `certificados` órfã**~~ resolvido em 24/05/2026: `gerar_pdf_certificado_upload` persiste `Certificado` via `certificado_repo.create` após o upload.
+- ~~**Endpoint `/api/checkin` público**~~ resolvido em 24/05/2026: agora exige `OrganizadorUser` + valida ownership do evento. Body JSON ao invés de query param.
+- **Reembolso em massa por cancelamento de evento**: `PATCH /api/eventos/{id}/cancelar` ainda não reembolsa automaticamente os pedidos PAGO do evento. Fluxo simétrico ao UC10, iterando.
 - ~~**Datetimes naive vs aware**~~ resolvido em 11/05/2026: todas as colunas `DateTime` agora são `DateTime(timezone=True)` (`TIMESTAMP WITH TIME ZONE`), e os 3 hacks `.replace(tzinfo=None)` em `pagamento_service`, `pedido_service` e `reembolso_repo` foram removidos. Migration `c4db6338c75c` registrada.

@@ -7,7 +7,17 @@ from fastapi.responses import JSONResponse
 from loguru import logger
 
 from app.api.middleware.logging import LoggingMiddleware
-from app.api.routes import auth, checkin, eventos, ingressos, lotes, pedidos, webhooks
+from app.api.routes import (
+    auth,
+    checkin,
+    cortesias,
+    cupons,
+    eventos,
+    ingressos,
+    lotes,
+    pedidos,
+    webhooks,
+)
 from app.core.logging_config import setup_logging
 from app.db.session import init_db
 from app.integrations.asaas.client import close_client as close_asaas_client
@@ -45,6 +55,8 @@ app.include_router(pedidos.router, prefix="/api")
 app.include_router(webhooks.router, prefix="/api")
 app.include_router(checkin.router, prefix="/api")
 app.include_router(ingressos.router, prefix="/api")
+app.include_router(cupons.router, prefix="/api")
+app.include_router(cortesias.router, prefix="/api")
 
 
 @app.exception_handler(Exception)

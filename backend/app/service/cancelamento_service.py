@@ -4,7 +4,7 @@ from app.integrations.asaas import charges as asaas_charges
 from app.integrations.asaas.exceptions import AsaasAPIError
 from app.models.pagamento import StatusPagamento
 from app.models.pedido import Pedido, StatusPedido
-from app.repositories import lote_repo, pagamento_repo, pedido_repo
+from app.repositories import cupom_repo, lote_repo, pagamento_repo, pedido_repo
 
 
 async def aplicar_cancelamento(
@@ -27,6 +27,11 @@ async def aplicar_cancelamento(
         lote = await lote_repo.get_by_id(db, item.lote_id)
         if lote is not None:
             lote_repo.decrementar_vendidas(lote, item.quantidade)
+
+    if pedido.cupom_id is not None:
+        cupom = await cupom_repo.get_by_id(db, pedido.cupom_id)
+        if cupom is not None and cupom.quantidade_usada > 0:
+            cupom_repo.decrementar_usado(cupom)
 
     pagamento = await pagamento_repo.get_by_pedido_id(db, pedido.id)
     if pagamento is not None:

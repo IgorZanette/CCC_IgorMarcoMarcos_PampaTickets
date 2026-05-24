@@ -18,8 +18,8 @@ class Ingresso(Base):
     __tablename__ = "ingressos"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    pedido_item_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("pedido_itens.id"), nullable=False
+    pedido_item_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("pedido_itens.id"), nullable=True
     )
     lote_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("lotes_ingresso.id"), nullable=False
@@ -37,5 +37,5 @@ class Ingresso(Base):
     )
 
     participante: Mapped["Usuario"] = relationship("Usuario", lazy="raise")  # noqa: F821
-    pedido_item: Mapped["PedidoItem"] = relationship("PedidoItem", lazy="raise")  # noqa: F821
+    pedido_item: Mapped["PedidoItem | None"] = relationship("PedidoItem", lazy="raise")  # noqa: F821
     lote: Mapped["Lote"] = relationship("Lote", lazy="raise")  # noqa: F821

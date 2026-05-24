@@ -2,17 +2,24 @@
 
 ## Ordem de implementação recomendada
 
-1. Autenticação JWT (UC01)
-2. Gerenciamento de Eventos e Lotes (UC02, UC03)
-3. Fluxo de compra e pagamento via Asaas (UC07, UC09, UC11)
-4. Geração de Ingresso PDF + Supabase Storage (UC12)
-5. Check-in via QR Code (UC04)
-6. Geração de Certificado PDF (UC13)
-7. Cupons e Cortesias (UC05, UC06)
-8. Notificações WhatsApp (UC15)
-9. Reembolso (UC10)
+Concluídos (em ordem cronológica):
+
+1. ✅ Autenticação JWT (UC01)
+2. ✅ Gerenciamento de Eventos e Lotes (UC02, UC03)
+3. ✅ Fluxo de compra e pagamento via Asaas (UC07, UC09, UC11)
+4. ✅ Geração de Ingresso PDF + Supabase Storage (UC12)
+5. ✅ Check-in via QR Code (UC04)
+6. ✅ Geração de Certificado PDF (UC13)
+7. ✅ Reembolso (UC10)
+8. ✅ Cupons (UC05)
+9. ✅ Cortesias (UC06)
+
+Pendentes:
+
 10. Relatório Financeiro PDF (UC14)
-11. **Galeria de Fotos (UC08) — deixar por último**
+11. Notificações WhatsApp (UC15)
+12. Reembolso em massa por cancelamento de evento (extensão do UC10)
+13. **Galeria de Fotos (UC08) — deixar por último**
 
 ---
 

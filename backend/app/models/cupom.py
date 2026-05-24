@@ -10,6 +10,7 @@ from sqlalchemy import (
     Integer,
     Numeric,
     String,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column
@@ -24,6 +25,9 @@ class TipoDesconto(str, enum.Enum):
 
 class Cupom(Base):
     __tablename__ = "cupons"
+    __table_args__ = (
+        UniqueConstraint("codigo", "evento_id", name="uq_cupom_codigo_evento"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     evento_id: Mapped[uuid.UUID] = mapped_column(

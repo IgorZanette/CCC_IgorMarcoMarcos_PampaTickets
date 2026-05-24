@@ -16,6 +16,9 @@ class PedidoCreate(BaseModel):
     evento_id: uuid.UUID
     itens: list[PedidoItemCreate] = Field(..., min_length=1)
     metodo: MetodoPagamento = Field(..., examples=["PIX"])
+    cupom_codigo: str | None = Field(
+        None, min_length=3, max_length=50, examples=["PROMO10"]
+    )
 
 
 class PedidoItemResponse(BaseModel):

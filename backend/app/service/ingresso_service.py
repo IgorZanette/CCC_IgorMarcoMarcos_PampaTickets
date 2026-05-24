@@ -2,13 +2,15 @@ import secrets
 import uuid
 from typing import Optional
 
+from fastapi import HTTPException, status
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.integrations.supabase.supabase_storage import supabase_storage
 from app.models.ingresso import Ingresso, StatusIngresso
+from app.models.usuario import Usuario
 from app.reports.ingresso_pdf import gerar_pdf_certificado, gerar_pdf_ingresso
-from app.repositories import ingresso_repo, pedido_repo
+from app.repositories import certificado_repo, checkin_repo, ingresso_repo, pedido_repo
 
 
 async def gerar_pdf_ingresso_upload(
@@ -101,9 +103,15 @@ async def gerar_pdf_certificado_upload(
             file=pdf_buffer, filename=filename, ingresso_id=ingresso_id
         )
 
-        # Atualizar URL no banco (campo certificado_url se existir)
-        # Por enquanto, apenas retornamos a URL
-        # await ingresso_repo.update_certificado_url(db, ingresso_id, pdf_url)
+        # Persistir Certificado no banco (idempotente)
+        existente = await certificado_repo.get_by_ingresso_id(db, ingresso.id)
+        if existente is None:
+            await certificado_repo.create(
+                db,
+                ingresso_id=ingresso.id,
+                participante_id=ingresso.participante_id,
+                pdf_url=pdf_url,
+            )
 
         return pdf_url
 
@@ -112,38 +120,50 @@ async def gerar_pdf_certificado_upload(
         return None
 
 
-async def validar_checkin(db: AsyncSession, qr_code_hash: str) -> Optional[dict]:
+async def validar_checkin(
+    db: AsyncSession, *, qr_code_hash: str, usuario: Usuario
+) -> dict:
     """
-    Valida um ingresso via QR Code hash e marca como utilizado.
-
-    Args:
-        db: Sessão do banco de dados
-        qr_code_hash: Hash do QR Code do ingresso
-
-    Returns:
-        Dados do ingresso se válido, None se inválido
+    Valida um ingresso via QR Code hash, persiste o Checkin e marca como utilizado.
+    Apenas o organizador dono do evento pode operar o check-in.
     """
-    try:
-        ingresso = await ingresso_repo.get_by_qr_hash(db, qr_code_hash)
-        if not ingresso or ingresso.status != StatusIngresso.ATIVO:
-            return None
+    ingresso = await ingresso_repo.get_by_qr_hash(db, qr_code_hash)
+    if ingresso is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Ingresso não encontrado.",
+        )
+    if ingresso.lote.evento.organizador_id != usuario.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Você não é o organizador deste evento.",
+        )
+    if ingresso.status == StatusIngresso.UTILIZADO:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Ingresso já utilizado.",
+        )
+    if ingresso.status == StatusIngresso.CANCELADO:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Ingresso cancelado.",
+        )
 
-        # Marcar como utilizado
-        await ingresso_repo.update_status(db, ingresso.id, StatusIngresso.UTILIZADO)
+    checkin = await checkin_repo.create(
+        db, ingresso_id=ingresso.id, realizado_por=usuario.id
+    )
+    await ingresso_repo.update_status(db, ingresso.id, StatusIngresso.UTILIZADO)
 
-        # Gerar certificado automaticamente
-        certificado_url = await gerar_pdf_certificado_upload(db, str(ingresso.id))
+    certificado_url = await gerar_pdf_certificado_upload(db, str(ingresso.id))
 
-        return {
-            "ingresso_id": ingresso.id,
-            "evento_nome": ingresso.lote.evento.nome,
-            "participante_nome": ingresso.participante.nome,
-            "certificado_url": certificado_url,
-        }
-
-    except Exception:
-        logger.exception("Falha em validar_checkin (qr_code_hash={})", qr_code_hash)
-        return None
+    return {
+        "checkin_id": checkin.id,
+        "ingresso_id": ingresso.id,
+        "realizado_em": checkin.realizado_em,
+        "evento_nome": ingresso.lote.evento.nome,
+        "participante_nome": ingresso.participante.nome,
+        "certificado_url": certificado_url,
+    }
 
 
 async def criar_ingressos_para_pedido(
