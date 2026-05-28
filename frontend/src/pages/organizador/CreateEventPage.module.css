@@ -1,0 +1,377 @@
+.stepper {
+  display: flex;
+  align-items: center;
+  padding: 20px 24px;
+}
+
+.stepGroup {
+  display: contents;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.stepCircle {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--pt-bg);
+  color: var(--pt-text-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid var(--pt-border);
+}
+
+.stepCircle[data-done="1"] {
+  background: var(--pt-accent-soft);
+  color: var(--pt-accent);
+  border-color: var(--pt-accent);
+}
+
+.stepCircle[data-active="1"] {
+  background: var(--pt-accent);
+  color: #fff;
+  border-color: var(--pt-accent);
+}
+
+.stepEyebrow {
+  font-size: 10px;
+  color: var(--pt-text-dim);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.stepLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pt-text-dim);
+}
+
+.stepLabel[data-active="1"] {
+  color: var(--pt-text);
+}
+
+.stepLine {
+  flex: 1;
+  height: 1px;
+  background: var(--pt-border);
+  margin: 0 16px;
+}
+
+.stepLine[data-done="1"] {
+  background: var(--pt-accent);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 16px;
+}
+
+.heading {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.lead {
+  font-size: 13px;
+  color: var(--pt-text-dim);
+  margin: 0 0 24px;
+}
+
+.field {
+  margin-bottom: 16px;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pt-text);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid var(--pt-border);
+  border-radius: var(--pt-r-md);
+  font-size: 14px;
+  background: #fff;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color var(--pt-t-fast);
+}
+
+.input:focus {
+  border-color: var(--pt-accent);
+}
+
+.textarea {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid var(--pt-border);
+  border-radius: var(--pt-r-md);
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  background: #fff;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.helper {
+  font-size: 11px;
+  color: var(--pt-text-dim);
+  margin-top: 4px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.row > .field {
+  margin-bottom: 0;
+}
+
+.row3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+.row3 > .field {
+  margin-bottom: 0;
+}
+
+.dropzone {
+  height: 180px;
+  border: 2px dashed var(--pt-border);
+  border-radius: var(--pt-r-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--pt-bg);
+  cursor: pointer;
+  transition: border-color var(--pt-t-fast);
+}
+
+.dropzone:hover {
+  border-color: var(--pt-accent);
+}
+
+.dropIcon {
+  font-size: 28px;
+}
+
+.dropTitle {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.dropSub {
+  font-size: 11px;
+  color: var(--pt-text-dim);
+}
+
+.loteCard {
+  border: 1px solid var(--pt-border);
+  border-radius: var(--pt-r-lg);
+  padding: 16px;
+  margin-bottom: 10px;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.smallInput {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--pt-border);
+  border-radius: var(--pt-r-sm);
+  font-size: 13px;
+  font-family: inherit;
+  background: #fff;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.menuBtn {
+  background: transparent;
+  border: none;
+  color: var(--pt-text-dim);
+  font-size: 16px;
+  align-self: end;
+  padding: 8px;
+}
+
+.dashedBtn {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  border: 1px dashed var(--pt-border);
+  border-radius: var(--pt-r-md);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pt-accent);
+}
+
+.dashedBtn:hover {
+  border-color: var(--pt-accent);
+}
+
+.tip {
+  margin-top: 24px;
+  padding: 16px;
+  background: var(--pt-accent-soft);
+  border-radius: var(--pt-r-lg);
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.tip span {
+  font-size: 18px;
+}
+
+.tip p {
+  font-size: 12px;
+  color: var(--pt-text);
+  line-height: 1.5;
+}
+
+.reviewSection {
+  padding: 20px 0;
+}
+
+.reviewSection:first-of-type {
+  padding-top: 0;
+}
+
+.reviewHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.reviewTitle {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.reviewEdit {
+  background: transparent;
+  color: var(--pt-accent);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.reviewRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 4px 0;
+}
+
+.reviewLabel {
+  color: var(--pt-text-dim);
+}
+
+.reviewValue {
+  font-weight: 500;
+}
+
+.terms {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  margin-top: 16px;
+  cursor: pointer;
+}
+
+.terms input {
+  accent-color: var(--pt-accent);
+}
+
+.termsLink {
+  color: var(--pt-accent);
+  cursor: pointer;
+}
+
+.formActions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--pt-border);
+}
+
+.preview {
+  position: sticky;
+  top: 24px;
+  background: var(--pt-bg-card);
+  border: 1px solid var(--pt-border);
+  border-radius: var(--pt-r-xl);
+  overflow: hidden;
+}
+
+.previewHead {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--pt-border);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--pt-text-dim);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.previewCover {
+  height: 140px;
+}
+
+.previewBody {
+  padding: 16px;
+}
+
+.previewTitle {
+  font-size: 16px;
+  font-weight: 700;
+  margin-top: 6px;
+  letter-spacing: -0.01em;
+}
+
+.previewMeta {
+  font-size: 12px;
+  color: var(--pt-text-dim);
+  margin-top: 8px;
+}
+
+.previewMeta + .previewMeta {
+  margin-top: 4px;
+}
+
+.previewPrice {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--pt-accent);
+  margin-top: 12px;
+}

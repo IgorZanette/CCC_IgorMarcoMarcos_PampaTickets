@@ -29,7 +29,7 @@ export const CadastroPage = () => {
     try {
       await cadastro({ ...form, perfil });
       const usuario = await login({ email: form.email, senha: form.senha });
-      navigate(usuario.perfil === "ORGANIZADOR" ? "/org" : "/app");
+      navigate(usuario.perfil === "ORGANIZADOR" ? "/organizador" : "/inicio");
     } catch (err: unknown) {
       setError(extractErrorMessage(err, "Não foi possível criar a conta."));
     } finally {

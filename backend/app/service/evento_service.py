@@ -45,6 +45,17 @@ async def listar_do_organizador(db: AsyncSession, organizador: Usuario) -> list[
     return await evento_repo.list_by_organizador(db, organizador.id)
 
 
+async def obter_do_organizador(
+    db: AsyncSession, organizador: Usuario, evento_id: uuid.UUID
+) -> Evento:
+    """Retorna o evento de qualquer status, desde que o requester seja o dono.
+
+    Contraparte privada de `obter_publico` — usada quando o organizador
+    precisa ver o próprio evento ainda em RASCUNHO ou CANCELADO.
+    """
+    return await _obter_proprio(db, organizador, evento_id)
+
+
 async def editar(
     db: AsyncSession,
     organizador: Usuario,

@@ -5,8 +5,8 @@ import { initials, useCurrentUser } from "../lib/auth-store";
 import styles from "./OrganizerLayout.module.css";
 
 const TOP_NAV = [
-  { to: "/org", label: "Visão geral", icon: "◫", end: true },
-  { to: "/org/financeiro", label: "Financeiro", icon: "$" },
+  { to: "/organizador", label: "Visão geral", icon: "◫", end: true },
+  { to: "/organizador/financeiro", label: "Financeiro", icon: "$" },
 ];
 
 const TOP_NAV_DISABLED = [
@@ -17,10 +17,10 @@ const TOP_NAV_DISABLED = [
 ];
 
 const EVENT_NAV = [
-  { to: "/org/evento", label: "Detalhes do evento", icon: "★" },
-  { to: "/org/lotes", label: "Lotes & vendas", icon: "◐" },
-  { to: "/org/checkin", label: "Check-in ao vivo", icon: "✓" },
-  { to: "/org/participantes", label: "Participantes", icon: "👥" },
+  { to: "/organizador/evento", label: "Detalhes do evento", icon: "★" },
+  { to: "/organizador/lotes", label: "Lotes & vendas", icon: "◐" },
+  { to: "/organizador/checkin", label: "Check-in ao vivo", icon: "✓" },
+  { to: "/organizador/participantes", label: "Participantes", icon: "👥" },
 ];
 
 export const OrganizerLayout = () => {

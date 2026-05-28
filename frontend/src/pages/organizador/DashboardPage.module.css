@@ -1,0 +1,352 @@
+.range {
+  background: transparent;
+  border: 1px solid var(--pt-border);
+  color: var(--pt-text);
+  padding: 8px 14px;
+  border-radius: var(--pt-r-md);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.cta {
+  background: var(--pt-accent);
+  color: var(--pt-accent-on);
+  padding: 8px 16px;
+  border-radius: var(--pt-r-md);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.body {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.charts {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  gap: 16px;
+}
+
+.chartCard,
+.lotesCard,
+.tableCard {
+  background: var(--pt-bg-card);
+  border: 1px solid var(--pt-border);
+  border-radius: var(--pt-r-xl);
+  padding: 24px;
+  box-shadow: var(--pt-shadow-card);
+}
+
+.cardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 24px;
+}
+
+.cardTitle {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.cardSub {
+  font-size: 12px;
+  color: var(--pt-text-dim);
+  margin-top: 4px;
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--pt-text-dim);
+}
+
+.legendDot {
+  width: 8px;
+  height: 8px;
+  background: var(--pt-accent);
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.chart {
+  height: 240px;
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  padding-left: 32px;
+  position: relative;
+}
+
+.gridLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed var(--pt-border);
+  pointer-events: none;
+}
+
+.gridLabel {
+  position: absolute;
+  left: 0;
+  top: -7px;
+  background: var(--pt-bg-card);
+  padding-right: 4px;
+  font-size: 10px;
+  color: var(--pt-text-dim);
+}
+
+.barWrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.bar {
+  width: 70%;
+  min-height: 4px;
+  background: linear-gradient(180deg, var(--pt-accent), #6ba87f);
+  border-radius: 6px 6px 0 0;
+  position: relative;
+  transition: opacity var(--pt-t-fast);
+}
+
+.bar:hover {
+  opacity: 0.85;
+}
+
+.barTooltip {
+  position: absolute;
+  top: -32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--pt-text);
+  color: #fff;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: var(--pt-r-sm);
+  white-space: nowrap;
+}
+
+.barLabel {
+  font-size: 11px;
+  color: var(--pt-text-dim);
+  font-weight: 500;
+}
+
+.loteRow {
+  margin-bottom: 16px;
+}
+
+.loteHead {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.loteName {
+  font-weight: 500;
+}
+
+.loteCount {
+  color: var(--pt-text-dim);
+}
+
+.loteSub {
+  font-size: 10px;
+  color: var(--pt-text-dim);
+  margin-top: 4px;
+}
+
+.lotesLink {
+  display: inline-block;
+  margin-top: 8px;
+  width: 100%;
+  text-align: center;
+  padding: 10px;
+  background: transparent;
+  border: 1px solid var(--pt-border);
+  border-radius: var(--pt-r-md);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pt-text);
+  transition: border-color var(--pt-t-fast);
+  box-sizing: border-box;
+}
+
+.lotesLink:hover {
+  border-color: var(--pt-accent);
+}
+
+.tableCard {
+  padding: 0;
+}
+
+.tableHead {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--pt-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tableLink {
+  font-size: 12px;
+  color: var(--pt-accent);
+  font-weight: 600;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table thead tr {
+  font-size: 11px;
+  color: var(--pt-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.table th {
+  padding: 10px 24px;
+  text-align: left;
+  font-weight: 600;
+}
+
+.table th.numeric {
+  text-align: right;
+}
+
+.table tbody tr {
+  border-top: 1px solid var(--pt-border);
+  font-size: 13px;
+  transition: background var(--pt-t-fast);
+}
+
+.table tbody tr:hover {
+  background: var(--pt-bg-card-2);
+}
+
+.table td {
+  padding: 14px 24px;
+}
+
+.numeric {
+  text-align: right;
+}
+
+.bold {
+  font-weight: 600;
+}
+
+.dim {
+  color: var(--pt-text-dim);
+}
+
+.empty {
+  padding: 40px 16px;
+  text-align: center;
+  color: var(--pt-org-text-dim);
+  font-size: 14px;
+}
+
+.inlineCta {
+  background: none;
+  border: none;
+  color: var(--pt-org-accent);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  font-size: inherit;
+  text-decoration: underline;
+}
+
+.eventGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  padding: 16px;
+}
+
+.eventCard {
+  text-align: left;
+  background: #fff;
+  border: 1px solid var(--pt-org-border);
+  border-radius: var(--pt-r-lg);
+  overflow: hidden;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  transition: border-color var(--pt-t-base), transform var(--pt-t-base);
+}
+
+.eventCard:hover {
+  transform: translateY(-2px);
+  border-color: var(--pt-org-accent);
+}
+
+.eventCard[data-active="1"] {
+  border-color: var(--pt-org-accent);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.04);
+}
+
+.eventCover {
+  height: 100px;
+}
+
+.eventBody {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.eventTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.eventTitle {
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.eventMeta {
+  font-size: 12px;
+  color: var(--pt-org-text-dim);
+}
+
+.eventActiveTag {
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pt-org-accent);
+}

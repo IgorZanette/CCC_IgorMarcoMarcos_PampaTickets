@@ -1,0 +1,111 @@
+.numeric {
+  text-align: right;
+}
+
+.bold {
+  font-weight: 600;
+}
+
+.tipo {
+  padding: 2px 8px;
+  border-radius: var(--pt-r-xs);
+  background: var(--pt-accent-soft);
+  color: var(--pt-accent);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.pct {
+  font-size: 10px;
+  color: var(--pt-text-dim);
+  margin-top: 4px;
+}
+
+.menuBtn {
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  color: var(--pt-text-dim);
+  padding: 4px 8px;
+  border-radius: var(--pt-r-sm);
+  transition: background var(--pt-t-fast);
+}
+
+.menuBtn:hover {
+  background: var(--pt-bg-card-2);
+  color: var(--pt-text);
+}
+
+.bottomRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.distBar {
+  display: flex;
+  height: 32px;
+  border-radius: var(--pt-r-sm);
+  overflow: hidden;
+  margin-bottom: 16px;
+  margin-top: 16px;
+}
+
+.distSlice {
+  height: 100%;
+}
+
+.distRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 6px 0;
+}
+
+.distLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.distSwatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.cupom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+}
+
+.cupomCode {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.cupomMeta {
+  font-size: 11px;
+  color: var(--pt-text-dim);
+  margin-top: 2px;
+}
+
+.dashedBtn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px;
+  background: transparent;
+  border: 1px dashed var(--pt-border);
+  border-radius: var(--pt-r-md);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pt-text-dim);
+}
+
+.dashedBtn:hover {
+  color: var(--pt-accent);
+  border-color: var(--pt-accent);
+}

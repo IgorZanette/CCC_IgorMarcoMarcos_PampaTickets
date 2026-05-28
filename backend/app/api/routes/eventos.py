@@ -32,6 +32,16 @@ async def listar_meus_eventos(db: DbDep, organizador: OrganizadorUser):
     return await evento_service.listar_do_organizador(db, organizador)
 
 
+@router.get(
+    "/organizador/eventos/{evento_id}",
+    response_model=EventoResponse,
+)
+async def obter_meu_evento(
+    evento_id: uuid.UUID, db: DbDep, organizador: OrganizadorUser
+):
+    return await evento_service.obter_do_organizador(db, organizador, evento_id)
+
+
 @router.get("/eventos/{evento_id}", response_model=EventoResponse)
 async def obter_evento(evento_id: uuid.UUID, db: DbDep):
     return await evento_service.obter_publico(db, evento_id)

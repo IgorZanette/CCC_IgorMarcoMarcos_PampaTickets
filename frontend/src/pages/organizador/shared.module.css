@@ -1,0 +1,119 @@
+/* Estilos compartilhados entre telas do organizador */
+
+.body {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card {
+  background: var(--pt-bg-card);
+  border: 1px solid var(--pt-border);
+  border-radius: var(--pt-r-xl);
+  box-shadow: var(--pt-shadow-card);
+}
+
+.cardPadded {
+  background: var(--pt-bg-card);
+  border: 1px solid var(--pt-border);
+  border-radius: var(--pt-r-xl);
+  padding: 24px;
+  box-shadow: var(--pt-shadow-card);
+}
+
+.cardTitle {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.eyebrow {
+  font-size: 11px;
+  color: var(--pt-text-dim);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.btnPrimary {
+  background: var(--pt-accent);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: var(--pt-r-md);
+  font-size: 12px;
+  font-weight: 600;
+  transition: transform var(--pt-t-fast);
+}
+
+.btnPrimary:hover {
+  transform: translateY(-1px);
+}
+
+.btnSecondary {
+  background: transparent;
+  border: 1px solid var(--pt-border);
+  color: var(--pt-text);
+  padding: 8px 14px;
+  border-radius: var(--pt-r-md);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.btnSecondary:hover {
+  border-color: var(--pt-accent);
+}
+
+.btnDark {
+  background: var(--pt-text);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: var(--pt-r-md);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table thead tr {
+  font-size: 11px;
+  color: var(--pt-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.table th {
+  padding: 14px 24px;
+  text-align: left;
+  font-weight: 600;
+}
+
+.table th.numeric {
+  text-align: right;
+}
+
+.table tbody tr {
+  border-top: 1px solid var(--pt-border);
+  font-size: 13px;
+}
+
+.table td {
+  padding: 14px 24px;
+}
+
+.tableHead {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--pt-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.numeric {
+  text-align: right;
+}

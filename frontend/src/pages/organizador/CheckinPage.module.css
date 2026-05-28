@@ -1,0 +1,124 @@
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.streamMeta {
+  font-size: 11px;
+  color: var(--pt-text-dim);
+}
+
+.streamRow {
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.streamMark {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: rgba(220, 38, 38, 0.1);
+  color: var(--pt-danger);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.streamMark[data-ok="1"] {
+  background: var(--pt-accent-soft);
+  color: var(--pt-accent);
+}
+
+.streamInfo {
+  flex: 1;
+}
+
+.streamName {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.streamSub {
+  font-size: 11px;
+  color: var(--pt-text-dim);
+}
+
+.streamTime {
+  font-size: 11px;
+  color: var(--pt-text-dim);
+}
+
+.gateList {
+  margin-top: 16px;
+}
+
+.gateRow {
+  margin-bottom: 18px;
+}
+
+.gateHead {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.gateName {
+  font-weight: 500;
+}
+
+.gateCount {
+  color: var(--pt-text-dim);
+}
+
+.scanner {
+  margin-top: 24px;
+  padding: 16px;
+  background: var(--pt-bg);
+  border-radius: var(--pt-r-lg);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.scannerQr {
+  width: 60px;
+  height: 60px;
+  background: #fff;
+  border: 1px solid var(--pt-border);
+  border-radius: var(--pt-r-md);
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1px;
+  padding: 4px;
+}
+
+.scannerOn {
+  background: var(--pt-text);
+}
+
+.scannerOff {
+  background: #fff;
+}
+
+.scannerTitle {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.scannerSub {
+  font-size: 11px;
+  color: var(--pt-text-dim);
+  margin-top: 2px;
+}

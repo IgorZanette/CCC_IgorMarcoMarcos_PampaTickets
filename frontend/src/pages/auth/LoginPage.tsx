@@ -19,7 +19,7 @@ export const LoginPage = () => {
     setLoading(true);
     try {
       const usuario = await login({ email, senha });
-      navigate(usuario.perfil === "ORGANIZADOR" ? "/org" : "/app");
+      navigate(usuario.perfil === "ORGANIZADOR" ? "/organizador" : "/inicio");
     } catch (err: unknown) {
       setError(
         extractErrorMessage(
@@ -89,12 +89,12 @@ export const LoginPage = () => {
         }}
       >
         Sem backend rodando? Use{" "}
-        <Link to="/app" style={{ color: "var(--pt-accent)" }}>
-          /app
+        <Link to="/inicio" style={{ color: "var(--pt-accent)" }}>
+          /inicio
         </Link>{" "}
         ou{" "}
-        <Link to="/org" style={{ color: "var(--pt-accent)" }}>
-          /org
+        <Link to="/organizador" style={{ color: "var(--pt-accent)" }}>
+          /organizador
         </Link>{" "}
         para ver o demo.
       </div>

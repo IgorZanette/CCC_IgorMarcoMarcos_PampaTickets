@@ -6,9 +6,9 @@ import { firstName, initials, useCurrentUser } from "../lib/auth-store";
 import styles from "./ParticipantLayout.module.css";
 
 const NAV = [
-  { to: "/app", label: "Início", end: true },
-  { to: "/app/explorar", label: "Explorar", end: false },
-  { to: "/app/meus-ingressos", label: "Meus ingressos", end: false },
+  { to: "/inicio", label: "Início", end: true },
+  { to: "/eventos", label: "Explorar", end: false },
+  { to: "/meus-ingressos", label: "Meus ingressos", end: false },
 ];
 
 export const ParticipantLayout = () => {
@@ -19,14 +19,14 @@ export const ParticipantLayout = () => {
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    navigate(`/app/explorar${search ? `?q=${encodeURIComponent(search)}` : ""}`);
+    navigate(`/eventos${search ? `?q=${encodeURIComponent(search)}` : ""}`);
   };
 
   return (
     <div className={styles.shell} data-theme="dark">
       <header className={styles.topbar}>
         <div className={styles.bar}>
-          <Link to="/app" className={styles.brand} aria-label="Ir para início">
+          <Link to="/inicio" className={styles.brand} aria-label="Ir para início">
             <Logo />
           </Link>
 
@@ -53,8 +53,7 @@ export const ParticipantLayout = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onFocus={() => {
-                if (location.pathname !== "/app/explorar")
-                  navigate("/app/explorar");
+                if (location.pathname !== "/eventos") navigate("/eventos");
               }}
               placeholder="Buscar evento, artista, local…"
               className={styles.search}
@@ -67,7 +66,7 @@ export const ParticipantLayout = () => {
           </button>
 
           {user ? (
-            <Link to="/app/meus-ingressos" className={styles.avatar}>
+            <Link to="/meus-ingressos" className={styles.avatar}>
               <span className={styles.avatarMark}>{initials(user.nome)}</span>
               <span className={styles.avatarName}>{firstName(user.nome)}</span>
             </Link>

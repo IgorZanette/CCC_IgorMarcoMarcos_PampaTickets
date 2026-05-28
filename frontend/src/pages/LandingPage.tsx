@@ -31,10 +31,10 @@ export const LandingPage = () => (
       </p>
 
       <div className={styles.actions}>
-        <Link to="/app" className={styles.primary}>
+        <Link to="/inicio" className={styles.primary}>
           Sou participante →
         </Link>
-        <Link to="/org" className={styles.secondary}>
+        <Link to="/organizador" className={styles.secondary}>
           Sou organizador →
         </Link>
       </div>

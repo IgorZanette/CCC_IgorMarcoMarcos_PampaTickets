@@ -24,8 +24,13 @@ const TONE: Record<string, string> = {
   "CHECK-IN": "ok",
   VENDENDO: "ok",
   "AO VIVO": "ok",
+  ATIVO: "ok",
   PENDENTE: "warn",
+  RASCUNHO: "warn",
   PASSADO: "neutral",
+  ENCERRADO: "neutral",
+  REEMBOLSADO: "neutral",
+  UTILIZADO: "neutral",
   CANCELADO: "danger",
   ESGOTADO: "danger",
 };
