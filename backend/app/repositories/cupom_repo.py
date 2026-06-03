@@ -13,14 +13,17 @@ async def get_by_id(db: AsyncSession, cupom_id: uuid.UUID) -> Cupom | None:
 
 
 async def get_by_codigo_and_evento(
-    db: AsyncSession, codigo: str, evento_id: uuid.UUID
+    db: AsyncSession, codigo: str, evento_id: uuid.UUID, *, for_update: bool = False
 ) -> Cupom | None:
-    result = await db.execute(
-        select(Cupom).where(
-            Cupom.codigo == codigo,
-            Cupom.evento_id == evento_id,
-        )
+    stmt = select(Cupom).where(
+        Cupom.codigo == codigo,
+        Cupom.evento_id == evento_id,
     )
+    if for_update:
+        # Lock de linha para serializar a checagem+incremento de uso do cupom
+        # na criação de pedido (evita furar quantidade_maxima sob concorrência).
+        stmt = stmt.with_for_update()
+    result = await db.execute(stmt)
     return result.scalar_one_or_none()
 
 
@@ -58,4 +61,4 @@ def incrementar_usado(cupom: Cupom, quantidade: int = 1) -> None:
 
 
 def decrementar_usado(cupom: Cupom, quantidade: int = 1) -> None:
-    cupom.quantidade_usada -= quantidade
+    cupom.quantidade_usada = max(0, cupom.quantidade_usada - quantidade)

@@ -1,3 +1,4 @@
+import hmac
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -25,11 +26,12 @@ async def asaas_webhook(
     - PAYMENT_OVERDUE: Pagamento vencido
     - PAYMENT_REFUNDED: Pagamento estornado
     """
-    # Validar token de autenticação do webhook (se configurado)
-    if settings.ASAAS_WEBHOOK_TOKEN:
-        asaas_token = request.headers.get("asaas-access-token")
-        if not asaas_token or asaas_token != settings.ASAAS_WEBHOOK_TOKEN:
-            raise HTTPException(status_code=401, detail="Token de webhook inválido")
+    # Validar token do webhook. Sempre exigido e comparado em tempo constante.
+    # Token configurado vazio (má configuração) => recusa tudo (fail-closed).
+    expected_token = settings.ASAAS_WEBHOOK_TOKEN
+    received_token = request.headers.get("asaas-access-token") or ""
+    if not expected_token or not hmac.compare_digest(received_token, expected_token):
+        raise HTTPException(status_code=401, detail="Token de webhook inválido")
 
     # Obter dados do webhook
     try:
@@ -49,15 +51,13 @@ async def asaas_webhook(
     # Processar o webhook
     try:
         await processar_webhook(db, evento=evento, payment_id=payment_id)
-    except Exception as e:
+    except Exception:
         logger.exception(
             "Falha ao processar webhook Asaas | evento={} payment_id={}",
             evento,
             payment_id,
         )
-        raise HTTPException(
-            status_code=500, detail=f"Erro ao processar webhook: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail="Erro ao processar webhook.")
 
     # Retornar sucesso para o Asaas
     return {"status": "ok"}

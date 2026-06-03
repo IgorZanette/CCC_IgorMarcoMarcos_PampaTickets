@@ -34,10 +34,11 @@ async def get_current_user(
         usuario_id = payload.get("sub")
         if not usuario_id:
             raise credencial_invalida
-    except jwt.PyJWTError:
+        usuario_uuid = uuid.UUID(usuario_id)
+    except (jwt.PyJWTError, ValueError):
         raise credencial_invalida
 
-    usuario = await usuario_repo.get_by_id(db, uuid.UUID(usuario_id))
+    usuario = await usuario_repo.get_by_id(db, usuario_uuid)
     if not usuario or not usuario.ativo:
         raise credencial_invalida
 
