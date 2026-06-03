@@ -7,6 +7,7 @@ from app.models.evento import Evento, StatusEvento
 from app.models.usuario import Usuario
 from app.repositories import evento_repo
 from app.schemas.evento import EventoCreate, EventoUpdate
+from app.service import cancelamento_service
 
 _STATUS_EDITAVEIS = {StatusEvento.RASCUNHO, StatusEvento.PUBLICADO}
 _STATUS_CANCELAVEIS = {StatusEvento.RASCUNHO, StatusEvento.PUBLICADO}
@@ -117,6 +118,8 @@ async def cancelar(
             status_code=status.HTTP_409_CONFLICT,
             detail="Evento não pode ser cancelado neste status.",
         )
+    # Cascata: cancela pendentes e estorna pagos antes de marcar o evento.
+    await cancelamento_service.cancelar_pedidos_do_evento(db, evento.id)
     return await evento_repo.update_status(db, evento, StatusEvento.CANCELADO)
 
 

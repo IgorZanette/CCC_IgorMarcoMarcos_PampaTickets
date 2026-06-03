@@ -7,6 +7,7 @@ from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.integrations.supabase.supabase_storage import supabase_storage
+from app.models.evento import StatusEvento
 from app.models.ingresso import Ingresso, StatusIngresso
 from app.models.usuario import Usuario
 from app.reports.ingresso_pdf import gerar_pdf_certificado, gerar_pdf_ingresso
@@ -137,6 +138,11 @@ async def validar_checkin(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Você não é o organizador deste evento.",
+        )
+    if ingresso.lote.evento.status == StatusEvento.CANCELADO:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Evento cancelado — check-in indisponível.",
         )
     if ingresso.status == StatusIngresso.UTILIZADO:
         raise HTTPException(
