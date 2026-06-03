@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.cortesia import Cortesia
@@ -14,7 +14,9 @@ from app.models.usuario import Usuario
 from app.reports.relatorio_pdf import DadosLote, DadosRelatorio, gerar_pdf_relatorio
 from app.repositories import evento_repo
 
-_STATUS_FATURADOS = (StatusPedido.PAGO, StatusPedido.REEMBOLSADO)
+# Receita só de pedidos efetivamente pagos (não-reembolsados). Pedidos REEMBOLSADO
+# saem da receita; o total reembolsado é reportado à parte (#16).
+_STATUS_FATURADOS = (StatusPedido.PAGO,)
 
 
 async def gerar_relatorio(
@@ -43,25 +45,31 @@ async def montar_dados(
             detail="Você não é o organizador deste evento.",
         )
 
-    # Q1 — vendas por lote (pedidos PAGO ou REEMBOLSADO)
+    # Q1 — vendas/receita por lote (somente pedidos PAGO). O filtro de status entra
+    # via CASE no agregado, não no JOIN: caso contrário, itens de pedidos não-pagos
+    # (pendentes, cancelados, reembolsados) vazariam no somatório de receita.
+    faturado = Pedido.status.in_(_STATUS_FATURADOS)
     vendas_stmt = (
         select(
             Lote.id,
             Lote.nome,
             Lote.tipo,
             Lote.preco,
-            func.coalesce(func.sum(PedidoItem.quantidade), 0).label("vendidos"),
             func.coalesce(
-                func.sum(PedidoItem.quantidade * PedidoItem.preco_unitario), 0
+                func.sum(case((faturado, PedidoItem.quantidade), else_=0)), 0
+            ).label("vendidos"),
+            func.coalesce(
+                func.sum(
+                    case(
+                        (faturado, PedidoItem.quantidade * PedidoItem.preco_unitario),
+                        else_=0,
+                    )
+                ),
+                0,
             ).label("receita"),
         )
         .join(PedidoItem, PedidoItem.lote_id == Lote.id, isouter=True)
-        .join(
-            Pedido,
-            (Pedido.id == PedidoItem.pedido_id)
-            & (Pedido.status.in_(_STATUS_FATURADOS)),
-            isouter=True,
-        )
+        .join(Pedido, Pedido.id == PedidoItem.pedido_id, isouter=True)
         .where(Lote.evento_id == evento_id)
         .group_by(Lote.id, Lote.nome, Lote.tipo, Lote.preco)
     )
@@ -80,7 +88,10 @@ async def montar_dados(
         select(func.coalesce(func.sum(Reembolso.valor_reembolsado), 0))
         .join(Pagamento, Pagamento.id == Reembolso.pagamento_id)
         .join(Pedido, Pedido.id == Pagamento.pedido_id)
-        .where(Pedido.evento_id == evento_id)
+        .where(
+            Pedido.evento_id == evento_id,
+            Reembolso.processado_em.isnot(None),
+        )
     )
     valor_reembolsado = float((await db.execute(reembolso_stmt)).scalar_one())
 
@@ -121,7 +132,8 @@ async def montar_dados(
         )
 
     receita_bruta = sum(lote.receita for lote in lotes)
-    receita_liquida = receita_bruta - desconto_total - valor_reembolsado
+    # Pedidos reembolsados já não entram na receita_bruta; o reembolso é informativo.
+    receita_liquida = receita_bruta - desconto_total
     total_ingressos = sum(lote.vendidos + lote.cortesias for lote in lotes)
     total_checkins = sum(lote.checkins for lote in lotes)
     taxa_comparecimento = (
