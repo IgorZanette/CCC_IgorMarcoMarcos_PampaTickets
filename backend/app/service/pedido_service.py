@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime, timezone
+from decimal import ROUND_HALF_UP, Decimal
 
 from fastapi import HTTPException, status
 from loguru import logger
@@ -42,10 +43,10 @@ async def criar(db: AsyncSession, participante: Usuario, data: PedidoCreate) -> 
 
     agora = datetime.now(timezone.utc)
     lotes_validos: list[tuple] = []
-    valor_total = 0.0
+    valor_total = Decimal("0")
 
     for item in data.itens:
-        lote = await lote_repo.get_by_id(db, item.lote_id)
+        lote = await lote_repo.get_by_id_for_update(db, item.lote_id)
 
         if lote is None or lote.evento_id != evento.id:
             raise HTTPException(
@@ -74,19 +75,23 @@ async def criar(db: AsyncSession, participante: Usuario, data: PedidoCreate) -> 
                 ),
             )
 
-        valor_total += float(lote.preco) * item.quantidade
+        valor_total += lote.preco * item.quantidade
         lotes_validos.append((lote, item.quantidade))
 
     cupom = None
-    valor_desconto = 0.0
+    valor_desconto = Decimal("0")
     if data.cupom_codigo:
         cupom, valor_desconto = await cupom_service.validar_e_calcular_desconto(
             db,
             evento_id=evento.id,
             codigo=data.cupom_codigo,
             valor_base=valor_total,
+            for_update=True,
         )
-        valor_total = round(valor_total - valor_desconto, 2)
+
+    valor_total = (valor_total - valor_desconto).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
 
     pedido = Pedido(
         participante_id=participante.id,
@@ -104,7 +109,7 @@ async def criar(db: AsyncSession, participante: Usuario, data: PedidoCreate) -> 
                 pedido_id=pedido.id,
                 lote_id=lote.id,
                 quantidade=qtd,
-                preco_unitario=float(lote.preco),
+                preco_unitario=lote.preco,
             )
         )
         lote_repo.incrementar_vendidas(lote, qtd)
@@ -235,7 +240,7 @@ async def reembolsar(
             detail="Não é possível reembolsar pedido com ingresso já utilizado.",
         )
 
-    pagamento = await pagamento_repo.get_by_pedido_id(db, pedido.id)
+    pagamento = await pagamento_repo.get_by_pedido_id_for_update(db, pedido.id)
     if pagamento is None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -252,3 +257,63 @@ async def reembolsar(
     return await pagamento_service.solicitar_reembolso(
         db, pagamento=pagamento, motivo=motivo
     )
+
+
+async def obter_status_pagamento(
+    db: AsyncSession, usuario: Usuario, pedido_id: uuid.UUID
+) -> dict:
+    """Dados de pagamento do pedido para a tela de status (reidrata PIX/fatura).
+
+    Reconsulta o Asaas para obter a fatura e o QR Code PIX atuais, permitindo que
+    a tela funcione mesmo após refresh (quando o state da navegação se perde).
+    """
+    pedido = await pedido_repo.get_by_id_com_itens(db, pedido_id)
+    if pedido is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Pedido não encontrado.",
+        )
+    if pedido.participante_id != usuario.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Você não tem acesso a este pedido.",
+        )
+
+    pagamento = await pagamento_repo.get_by_pedido_id(db, pedido_id)
+    if pagamento is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Pedido sem pagamento associado.",
+        )
+
+    invoice_url = None
+    pix_qrcode = None
+    if pagamento.charge_id:
+        try:
+            cobranca = await asaas_charges.get_charge(charge_id=pagamento.charge_id)
+            invoice_url = cobranca.get("invoiceUrl")
+        except AsaasAPIError:
+            logger.warning(
+                "Falha ao consultar cobrança {} para status de pagamento",
+                pagamento.charge_id,
+            )
+        if pagamento.metodo == MetodoPagamento.PIX:
+            try:
+                pix_qrcode = await asaas_charges.get_pix_qrcode(
+                    charge_id=pagamento.charge_id
+                )
+            except AsaasAPIError:
+                logger.warning(
+                    "Falha ao buscar QR Code PIX da cobrança {}",
+                    pagamento.charge_id,
+                )
+
+    return {
+        "pedido_id": pedido.id,
+        "metodo": pagamento.metodo,
+        "status_pagamento": pagamento.status,
+        "status_pedido": pedido.status,
+        "charge_id": pagamento.charge_id,
+        "invoice_url": invoice_url,
+        "pix_qrcode": pix_qrcode,
+    }

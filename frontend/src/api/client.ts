@@ -3,6 +3,8 @@
 
 import axios, { type AxiosInstance } from "axios";
 
+import { setStoredUser } from "../lib/auth-store";
+
 const baseURL =
   (import.meta.env.VITE_API_URL as string | undefined) ??
   "http://localhost:8000/api";
@@ -21,6 +23,19 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Sessão expirada/inválida (401): limpa token + usuário. Os guards de rota
+// (RequireAuth) reagem à mudança e redirecionam para /login.
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error?.response?.status === 401) {
+      setToken(null);
+      setStoredUser(null);
+    }
+    return Promise.reject(error);
+  },
+);
 
 export const setToken = (token: string | null) => {
   if (token) localStorage.setItem(TOKEN_KEY, token);

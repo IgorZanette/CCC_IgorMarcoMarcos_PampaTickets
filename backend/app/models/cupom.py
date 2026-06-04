@@ -4,6 +4,7 @@ from datetime import datetime
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     DateTime,
     Enum,
     ForeignKey,
@@ -27,6 +28,7 @@ class Cupom(Base):
     __tablename__ = "cupons"
     __table_args__ = (
         UniqueConstraint("codigo", "evento_id", name="uq_cupom_codigo_evento"),
+        CheckConstraint("quantidade_usada >= 0", name="ck_cupom_usada_nao_negativa"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)

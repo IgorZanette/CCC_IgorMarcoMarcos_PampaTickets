@@ -3,7 +3,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from app.models.pagamento import MetodoPagamento
+from app.models.pagamento import MetodoPagamento, StatusPagamento
 from app.models.pedido import StatusPedido
 
 
@@ -48,4 +48,14 @@ class PedidoCriadoResponse(BaseModel):
     pedido: PedidoResponse
     invoice_url: str
     charge_id: str
+    pix_qrcode: dict | None = None
+
+
+class PagamentoStatusResponse(BaseModel):
+    pedido_id: uuid.UUID
+    metodo: MetodoPagamento
+    status_pagamento: StatusPagamento
+    status_pedido: StatusPedido
+    charge_id: str | None = None
+    invoice_url: str | None = None
     pix_qrcode: dict | None = None

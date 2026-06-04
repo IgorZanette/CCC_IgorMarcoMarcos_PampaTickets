@@ -33,6 +33,13 @@ class CadastroRequest(BaseModel):
             )
         return numero
 
+    @field_validator("senha")
+    @classmethod
+    def validar_forca_senha(cls, v: str) -> str:
+        if not re.search(r"[A-Za-z]", v) or not re.search(r"\d", v):
+            raise ValueError("A senha deve conter ao menos uma letra e um número.")
+        return v
+
 
 class LoginRequest(BaseModel):
     email: EmailStr = Field(..., examples=["marco.antonio@santolin.com.br"])

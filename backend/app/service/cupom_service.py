@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime, timezone
+from decimal import ROUND_HALF_UP, Decimal
 
 from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
@@ -83,6 +84,16 @@ async def editar(
             ),
         )
 
+    # Valida a coerência tipo×valor considerando o estado final (merge), não só o
+    # payload — ex.: trocar para PERCENTUAL mantendo um valor fixo > 100.
+    novo_tipo = campos.get("tipo_desconto", cupom.tipo_desconto)
+    novo_valor = campos.get("valor_desconto", cupom.valor_desconto)
+    if novo_tipo == TipoDesconto.PERCENTUAL and float(novo_valor) > 100:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="valor_desconto percentual não pode ser maior que 100.",
+        )
+
     return await cupom_repo.update(db, cupom, **campos)
 
 
@@ -103,14 +114,21 @@ async def validar_e_calcular_desconto(
     db: AsyncSession,
     evento_id: uuid.UUID,
     codigo: str,
-    valor_base: float,
-) -> tuple[Cupom, float]:
+    valor_base: Decimal | float,
+    *,
+    for_update: bool = False,
+) -> tuple[Cupom, Decimal]:
     """
     Valida o cupom para o evento e calcula o valor de desconto a aplicar.
     Levanta HTTPException em qualquer cenário inválido.
     Não persiste nem incrementa quantidade_usada — quem chama decide.
+
+    `for_update=True` (usado na criação de pedido) trava a linha do cupom para
+    serializar a checagem de esgotamento sob concorrência.
     """
-    cupom = await cupom_repo.get_by_codigo_and_evento(db, codigo, evento_id)
+    cupom = await cupom_repo.get_by_codigo_and_evento(
+        db, codigo, evento_id, for_update=for_update
+    )
     if cupom is None or not cupom.ativo:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -133,12 +151,13 @@ async def validar_e_calcular_desconto(
             detail="Cupom esgotado.",
         )
 
+    base = Decimal(str(valor_base))
     if cupom.tipo_desconto == TipoDesconto.PERCENTUAL:
-        valor_desconto = valor_base * (float(cupom.valor_desconto) / 100)
+        valor_desconto = base * (cupom.valor_desconto / Decimal(100))
     else:  # VALOR_FIXO
-        valor_desconto = min(float(cupom.valor_desconto), valor_base)
+        valor_desconto = min(cupom.valor_desconto, base)
 
-    return cupom, round(valor_desconto, 2)
+    return cupom, valor_desconto.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
 async def _validar_ownership_evento(

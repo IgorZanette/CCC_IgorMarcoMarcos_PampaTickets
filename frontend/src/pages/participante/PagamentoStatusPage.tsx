@@ -2,7 +2,12 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 
 import { obterEvento, type Evento } from "../../api/eventos";
-import { obterPedido, type Pedido, type PixQrCode } from "../../api/pedidos";
+import {
+  obterPagamento,
+  obterPedido,
+  type Pedido,
+  type PixQrCode,
+} from "../../api/pedidos";
 import { extractErrorMessage } from "../../lib/errors";
 import { dateLong, money } from "../../lib/format";
 
@@ -18,8 +23,12 @@ export const PagamentoStatusPage = () => {
   const { id, pedidoId } = useParams();
   const location = useLocation();
   const state = location.state as LocationState;
-  const invoiceUrl = state?.invoiceUrl;
-  const pixQrcode = state?.pixQrcode ?? null;
+  const [invoiceUrl, setInvoiceUrl] = useState<string | undefined>(
+    state?.invoiceUrl,
+  );
+  const [pixQrcode, setPixQrcode] = useState<PixQrCode | null>(
+    state?.pixQrcode ?? null,
+  );
 
   const [ev, setEv] = useState<Evento | null>(null);
   const [pedido, setPedido] = useState<Pedido | null>(null);
@@ -29,6 +38,24 @@ export const PagamentoStatusPage = () => {
     if (!id) return;
     obterEvento(id).then(setEv).catch(() => undefined);
   }, [id]);
+
+  // #10: reidrata fatura/QR PIX quando o state da navegação se perdeu (refresh,
+  // link direto ou voltar/avançar) — sem isso o usuário ficaria sem como pagar.
+  useEffect(() => {
+    if (!pedidoId) return;
+    if (state?.invoiceUrl || state?.pixQrcode) return;
+    let cancelled = false;
+    obterPagamento(pedidoId)
+      .then((p) => {
+        if (cancelled) return;
+        setInvoiceUrl(p.invoice_url ?? undefined);
+        setPixQrcode(p.pix_qrcode);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [pedidoId, state]);
 
   useEffect(() => {
     if (!pedidoId) return;

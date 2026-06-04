@@ -54,6 +54,24 @@ export type ReembolsoCreate = {
   motivo: string;
 };
 
+export type Reembolso = {
+  id: string;
+  pagamento_id: string;
+  motivo: string | null;
+  valor_reembolsado: number;
+  processado_em: string | null;
+};
+
+export type PagamentoStatus = {
+  pedido_id: string;
+  metodo: MetodoPagamento;
+  status_pagamento: string;
+  status_pedido: StatusPedido;
+  charge_id: string | null;
+  invoice_url: string | null;
+  pix_qrcode: PixQrCode | null;
+};
+
 export const criarPedido = async (payload: PedidoCreate): Promise<PedidoCriado> => {
   const { data } = await api.post<PedidoCriado>("/pedidos", payload);
   return data;
@@ -69,6 +87,15 @@ export const obterPedido = async (pedidoId: string): Promise<Pedido> => {
   return data;
 };
 
+export const obterPagamento = async (
+  pedidoId: string,
+): Promise<PagamentoStatus> => {
+  const { data } = await api.get<PagamentoStatus>(
+    `/pedidos/${pedidoId}/pagamento`,
+  );
+  return data;
+};
+
 export const cancelarPedido = async (pedidoId: string): Promise<Pedido> => {
   const { data } = await api.post<Pedido>(`/pedidos/${pedidoId}/cancelar`);
   return data;
@@ -77,8 +104,8 @@ export const cancelarPedido = async (pedidoId: string): Promise<Pedido> => {
 export const reembolsarPedido = async (
   pedidoId: string,
   payload: ReembolsoCreate,
-): Promise<Pedido> => {
-  const { data } = await api.post<Pedido>(
+): Promise<Reembolso> => {
+  const { data } = await api.post<Reembolso>(
     `/pedidos/${pedidoId}/reembolso`,
     payload,
   );

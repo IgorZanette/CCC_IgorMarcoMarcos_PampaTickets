@@ -18,6 +18,23 @@ from app.service import cancelamento_service, ingresso_service
 from app.service.ingresso_service import gerar_pdf_ingresso_upload
 
 
+# Status do Asaas que confirmam cada transição. O campo "event" do corpo do webhook
+# é falsificável; por isso reconsultamos a cobrança no gateway antes de mudar estado.
+_ASAAS_STATUS_CONFIRMADO = {"CONFIRMED", "RECEIVED", "RECEIVED_IN_CASH"}
+_ASAAS_STATUS_VENCIDO = {"OVERDUE"}
+_ASAAS_STATUS_ESTORNADO = {"REFUNDED", "PARTIALLY_REFUNDED"}
+
+
+async def _status_confere_no_asaas(charge_id: str, esperados: set[str]) -> bool:
+    """Reconsulta a cobrança no Asaas e confere se o status real está em `esperados`.
+
+    Defesa contra webhooks forjados: a fonte da verdade é o gateway. Se a consulta
+    falhar, a AsaasAPIError propaga — o webhook responde erro e o Asaas reentrega.
+    """
+    cobranca = await asaas_charges.get_charge(charge_id=charge_id)
+    return cobranca.get("status") in esperados
+
+
 async def criar_pagamento(
     db: AsyncSession,
     *,
@@ -87,28 +104,41 @@ async def processar_webhook(db: AsyncSession, *, evento: str, payment_id: str) -
         return
 
     if evento in ("PAYMENT_CONFIRMED", "PAYMENT_RECEIVED"):
-        if pagamento.status == StatusPagamento.APROVADO:
-            logger.info(
-                "{} ignorado — pagamento {} já aprovado",
-                evento,
-                payment_id,
+        if pagamento.status != StatusPagamento.APROVADO:
+            if not await _status_confere_no_asaas(
+                payment_id, _ASAAS_STATUS_CONFIRMADO
+            ):
+                logger.warning(
+                    "{} ignorado — cobrança {} não está confirmada no Asaas",
+                    evento,
+                    payment_id,
+                )
+                return
+
+            await pagamento_repo.update_status(
+                db,
+                pagamento,
+                StatusPagamento.APROVADO,
+                pago_em=datetime.now(timezone.utc),
             )
-            return
+            await _atualizar_status_pedido(db, pagamento.pedido_id, StatusPedido.PAGO)
 
-        await pagamento_repo.update_status(
-            db,
-            pagamento,
-            StatusPagamento.APROVADO,
-            pago_em=datetime.now(timezone.utc),
-        )
-        await _atualizar_status_pedido(db, pagamento.pedido_id, StatusPedido.PAGO)
-
+        # Idempotente e auto-recuperável: garante a emissão dos ingressos mesmo que
+        # uma entrega anterior tenha falhado após marcar o pagamento como aprovado.
         await ingresso_service.criar_ingressos_para_pedido(db, pagamento.pedido_id)
         await _gerar_pdfs_ingressos(db, pagamento.pedido_id)
 
     elif evento == "PAYMENT_OVERDUE":
+        if not await _status_confere_no_asaas(payment_id, _ASAAS_STATUS_VENCIDO):
+            logger.warning(
+                "PAYMENT_OVERDUE ignorado — cobrança {} não está vencida no Asaas",
+                payment_id,
+            )
+            return
         pedido = await pedido_repo.get_by_id_com_itens(db, pagamento.pedido_id)
-        if pedido is not None:
+        # Só cancela pedidos ainda pendentes — protege contra webhook de vencimento
+        # entregue fora de ordem sobre um pedido já pago.
+        if pedido is not None and pedido.status == StatusPedido.PENDENTE:
             await cancelamento_service.aplicar_cancelamento(
                 db,
                 pedido=pedido,
@@ -119,6 +149,13 @@ async def processar_webhook(db: AsyncSession, *, evento: str, payment_id: str) -
         if pagamento.status == StatusPagamento.ESTORNADO:
             logger.info(
                 "PAYMENT_REFUNDED ignorado — pagamento {} já estornado", payment_id
+            )
+            return
+
+        if not await _status_confere_no_asaas(payment_id, _ASAAS_STATUS_ESTORNADO):
+            logger.warning(
+                "PAYMENT_REFUNDED ignorado — cobrança {} não está estornada no Asaas",
+                payment_id,
             )
             return
 

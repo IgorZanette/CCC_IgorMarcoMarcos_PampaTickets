@@ -6,6 +6,8 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from loguru import logger
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from app.api.middleware.logging import LoggingMiddleware
 from app.api.routes import (
@@ -21,6 +23,7 @@ from app.api.routes import (
     webhooks,
 )
 from app.core.logging_config import setup_logging
+from app.core.rate_limit import limiter
 from app.db.session import init_db
 from app.integrations.asaas.client import close_client as close_asaas_client
 
@@ -37,6 +40,9 @@ app = FastAPI(
     title="PampaTickets API",
     lifespan=lifespan,
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,

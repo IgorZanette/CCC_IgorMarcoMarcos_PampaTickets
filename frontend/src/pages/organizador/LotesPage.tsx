@@ -16,7 +16,7 @@ import { ProgressBar } from "../../components/ProgressBar";
 import { StatusPill } from "../../components/StatusPill";
 import type { OrgOutlet } from "../../layouts/OrganizerLayout";
 import { extractErrorMessage } from "../../lib/errors";
-import { money } from "../../lib/format";
+import { localToUtcIso, money } from "../../lib/format";
 
 import shared from "./shared.module.css";
 import styles from "./LotesPage.module.css";
@@ -89,8 +89,8 @@ export const LotesPage = () => {
         tipo,
         preco: parseFloat(preco),
         quantidade_total: parseInt(quantidade, 10),
-        data_inicio_venda: new Date(inicio).toISOString(),
-        data_fim_venda: new Date(fim).toISOString(),
+        data_inicio_venda: localToUtcIso(inicio),
+        data_fim_venda: localToUtcIso(fim),
         ativo,
       };
       const novo = await criarLote(id, payload);

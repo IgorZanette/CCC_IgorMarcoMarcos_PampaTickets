@@ -37,6 +37,17 @@ async def get_by_pedido_id(db: AsyncSession, pedido_id: uuid.UUID) -> Pagamento 
     return result.scalar_one_or_none()
 
 
+async def get_by_pedido_id_for_update(
+    db: AsyncSession, pedido_id: uuid.UUID
+) -> Pagamento | None:
+    """Igual a get_by_pedido_id, mas com lock de linha — serializa o reembolso
+    para evitar estorno em dobro sob concorrência."""
+    result = await db.execute(
+        select(Pagamento).where(Pagamento.pedido_id == pedido_id).with_for_update()
+    )
+    return result.scalar_one_or_none()
+
+
 async def get_by_charge_id(db: AsyncSession, charge_id: str) -> Pagamento | None:
     result = await db.execute(select(Pagamento).where(Pagamento.charge_id == charge_id))
     return result.scalar_one_or_none()

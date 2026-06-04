@@ -45,6 +45,12 @@ export const cadastro = async (payload: CadastroPayload): Promise<Usuario> => {
   return data;
 };
 
+export const me = async (): Promise<Usuario> => {
+  const { data } = await api.get<Usuario>("/auth/me");
+  setStoredUser(data);
+  return data;
+};
+
 export const logout = () => {
   setToken(null);
   setStoredUser(null);
