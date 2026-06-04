@@ -12,5 +12,10 @@ wheels/
 # Ruff files
 .ruff_cache
 
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
 # Claude Files
 .claude
