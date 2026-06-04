@@ -14,7 +14,7 @@ import { PageHeader } from "../../components/PageHeader";
 import { StatusPill } from "../../components/StatusPill";
 import type { OrgOutlet } from "../../layouts/OrganizerLayout";
 import { extractErrorMessage } from "../../lib/errors";
-import { dateLong, money } from "../../lib/format";
+import { dateLong, localToUtcIso, money } from "../../lib/format";
 
 import shared from "./shared.module.css";
 import styles from "./orgForms.module.css";
@@ -90,7 +90,7 @@ export const CuponsPage = () => {
         quantidade_maxima: quantidadeMaxima
           ? parseInt(quantidadeMaxima, 10)
           : null,
-        valido_ate: new Date(validoAte).toISOString(),
+        valido_ate: localToUtcIso(validoAte),
         ativo,
       };
       const novo = await criarCupom(id, payload);

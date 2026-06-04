@@ -10,6 +10,9 @@ export type CheckinResponse = {
   checkin_id: string;
   ingresso_id: string;
   realizado_em: string;
+  evento_nome: string;
+  participante_nome: string;
+  certificado_url: string | null;
 };
 
 export const realizarCheckin = async (

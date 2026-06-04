@@ -1,5 +1,9 @@
+import { useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
+import { me } from "./api/auth";
+import { getToken } from "./api/client";
+import { RequireAuth } from "./components/RequireAuth";
 import { ParticipantLayout } from "./layouts/ParticipantLayout";
 import { OrganizerLayout } from "./layouts/OrganizerLayout";
 
@@ -25,40 +29,57 @@ import { AttendeesPage } from "./pages/organizador/AttendeesPage";
 import { CuponsPage } from "./pages/organizador/CuponsPage";
 import { CortesiasPage } from "./pages/organizador/CortesiasPage";
 
-export const App = () => (
-  <Routes>
-    {/* Públicas + auth (sem layout de persona) */}
-    <Route path="/" element={<LandingPage />} />
-    <Route path="/login" element={<LoginPage />} />
-    <Route path="/cadastro" element={<CadastroPage />} />
+export const App = () => {
+  // #18: revalida a sessão no carregamento — reidrata o usuário guardado e, se o
+  // token estiver inválido/expirado, o interceptor de 401 limpa a sessão.
+  useEffect(() => {
+    if (getToken()) {
+      me().catch(() => undefined);
+    }
+  }, []);
 
-    {/* Vitrine e fluxo do participante (tema escuro) */}
-    <Route element={<ParticipantLayout />}>
-      <Route path="/inicio" element={<HomePage />} />
-      <Route path="/eventos" element={<SearchPage />} />
-      <Route path="/eventos/:id" element={<EventoPage />} />
-      <Route path="/eventos/:id/checkout" element={<CheckoutPage />} />
-      <Route
-        path="/eventos/:id/pagamento/:pedidoId"
-        element={<PagamentoStatusPage />}
-      />
-      <Route path="/eventos/:id/ingressos" element={<TicketsPage />} />
-      <Route path="/meus-ingressos" element={<MyTicketsPage />} />
-    </Route>
+  return (
+    <Routes>
+      {/* Públicas + auth (sem layout de persona) */}
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/cadastro" element={<CadastroPage />} />
 
-    {/* Organizador (tema claro) — fonte da verdade do evento é o :id na URL */}
-    <Route path="/organizador" element={<OrganizerLayout />}>
-      <Route index element={<DashboardPage />} />
-      <Route path="eventos/novo" element={<CreateEventPage />} />
-      <Route path="eventos/:id" element={<OrgEventoPage />} />
-      <Route path="eventos/:id/lotes" element={<LotesPage />} />
-      <Route path="eventos/:id/cupons" element={<CuponsPage />} />
-      <Route path="eventos/:id/cortesias" element={<CortesiasPage />} />
-      <Route path="eventos/:id/checkin" element={<CheckinPage />} />
-      <Route path="eventos/:id/participantes" element={<AttendeesPage />} />
-      <Route path="eventos/:id/financeiro" element={<FinancePage />} />
-    </Route>
+      {/* Vitrine e fluxo do participante (tema escuro) */}
+      <Route element={<ParticipantLayout />}>
+        {/* Navegação pública (vitrine) */}
+        <Route path="/inicio" element={<HomePage />} />
+        <Route path="/eventos" element={<SearchPage />} />
+        <Route path="/eventos/:id" element={<EventoPage />} />
 
-    <Route path="*" element={<Navigate to="/" replace />} />
-  </Routes>
-);
+        {/* Fluxo que exige login */}
+        <Route element={<RequireAuth />}>
+          <Route path="/eventos/:id/checkout" element={<CheckoutPage />} />
+          <Route
+            path="/eventos/:id/pagamento/:pedidoId"
+            element={<PagamentoStatusPage />}
+          />
+          <Route path="/eventos/:id/ingressos" element={<TicketsPage />} />
+          <Route path="/meus-ingressos" element={<MyTicketsPage />} />
+        </Route>
+      </Route>
+
+      {/* Organizador (tema claro) — exige login com perfil ORGANIZADOR */}
+      <Route element={<RequireAuth perfil="ORGANIZADOR" />}>
+        <Route path="/organizador" element={<OrganizerLayout />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="eventos/novo" element={<CreateEventPage />} />
+          <Route path="eventos/:id" element={<OrgEventoPage />} />
+          <Route path="eventos/:id/lotes" element={<LotesPage />} />
+          <Route path="eventos/:id/cupons" element={<CuponsPage />} />
+          <Route path="eventos/:id/cortesias" element={<CortesiasPage />} />
+          <Route path="eventos/:id/checkin" element={<CheckinPage />} />
+          <Route path="eventos/:id/participantes" element={<AttendeesPage />} />
+          <Route path="eventos/:id/financeiro" element={<FinancePage />} />
+        </Route>
+      </Route>
+
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+};

@@ -1,7 +1,8 @@
 // Formatadores em pt-BR — moeda, datas, helpers para datas laterais.
-// Espelha PT_fmt do handoff (data.js) com tipagem.
+// Convenção do app (#15): datas são exibidas e digitadas no fuso de São Paulo
+// (UTC-3, sem horário de verão desde 2019), independentemente do fuso do navegador.
 
-const SEMANAS = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
+const TZ = "America/Sao_Paulo";
 
 export const money = (v: number): string =>
   v === 0
@@ -20,13 +21,14 @@ export const moneyShort = (v: number): string =>
 export const dateShort = (iso: string): string => {
   const d = new Date(iso);
   return d
-    .toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })
+    .toLocaleDateString("pt-BR", { timeZone: TZ, day: "2-digit", month: "short" })
     .replace(".", "");
 };
 
 export const dateLong = (iso: string): string => {
   const d = new Date(iso);
   return d.toLocaleDateString("pt-BR", {
+    timeZone: TZ,
     day: "2-digit",
     month: "long",
     year: "numeric",
@@ -59,16 +61,28 @@ export type DateParts = {
 export const dateFull = (iso: string): DateParts => {
   const d = new Date(iso);
   return {
-    dia: d.getDate().toString().padStart(2, "0"),
+    dia: d.toLocaleDateString("pt-BR", { timeZone: TZ, day: "2-digit" }),
     mes: d
-      .toLocaleDateString("pt-BR", { month: "short" })
+      .toLocaleDateString("pt-BR", { timeZone: TZ, month: "short" })
       .replace(".", "")
       .toUpperCase(),
-    semana: SEMANAS[d.getDay()],
-    ano: d.getFullYear(),
+    semana: d
+      .toLocaleDateString("pt-BR", { timeZone: TZ, weekday: "short" })
+      .replace(".", "")
+      .toUpperCase(),
+    ano: Number(d.toLocaleDateString("pt-BR", { timeZone: TZ, year: "numeric" })),
     hora: d.toLocaleTimeString("pt-BR", {
+      timeZone: TZ,
       hour: "2-digit",
       minute: "2-digit",
     }),
   };
+};
+
+// Interpreta um valor de <input type="datetime-local"> (ex.: "2026-12-31T20:00")
+// como horário de São Paulo (UTC-3) e devolve o ISO em UTC para enviar ao backend.
+// Garante a mesma convenção em todos os formulários, independente do fuso do navegador.
+export const localToUtcIso = (value: string): string => {
+  const comSegundos = value.length === 16 ? `${value}:00` : value;
+  return new Date(`${comSegundos}-03:00`).toISOString();
 };

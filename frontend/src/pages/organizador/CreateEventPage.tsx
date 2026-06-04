@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { criarEvento, gradientFor, type Evento } from "../../api/eventos";
 import { PageHeader } from "../../components/PageHeader";
 import { extractErrorMessage } from "../../lib/errors";
+import { localToUtcIso } from "../../lib/format";
 
 import shared from "./shared.module.css";
 import styles from "./CreateEventPage.module.css";
@@ -28,8 +29,8 @@ export const CreateEventPage = () => {
       const novo: Evento = await criarEvento({
         nome,
         descricao: descricao || null,
-        data_inicio: dataInicio,
-        data_fim: dataFim,
+        data_inicio: localToUtcIso(dataInicio),
+        data_fim: localToUtcIso(dataFim),
         local,
       });
       navigate(`/organizador/eventos/${novo.id}`);
