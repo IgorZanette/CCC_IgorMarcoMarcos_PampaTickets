@@ -2,7 +2,15 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Numeric, String, Text
+from sqlalchemy import (
+    DateTime,
+    Enum,
+    ForeignKey,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -24,6 +32,10 @@ class StatusPagamento(str, enum.Enum):
 
 class Pagamento(Base):
     __tablename__ = "pagamentos"
+    __table_args__ = (
+        UniqueConstraint("pedido_id", name="uq_pagamento_pedido"),
+        UniqueConstraint("charge_id", name="uq_pagamento_charge"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     pedido_id: Mapped[uuid.UUID] = mapped_column(
@@ -44,6 +56,9 @@ class Pagamento(Base):
 
 class Reembolso(Base):
     __tablename__ = "reembolsos"
+    __table_args__ = (
+        UniqueConstraint("pagamento_id", name="uq_reembolso_pagamento"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     pagamento_id: Mapped[uuid.UUID] = mapped_column(

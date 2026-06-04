@@ -3,7 +3,12 @@ import uuid
 from fastapi import APIRouter, status
 
 from app.api.deps import CurrentUser, DbDep, ParticipanteUser
-from app.schemas.pedido import PedidoCriadoResponse, PedidoCreate, PedidoResponse
+from app.schemas.pedido import (
+    PagamentoStatusResponse,
+    PedidoCreate,
+    PedidoCriadoResponse,
+    PedidoResponse,
+)
 from app.schemas.reembolso import ReembolsoCreate, ReembolsoResponse
 from app.service import pedido_service
 
@@ -28,6 +33,15 @@ async def listar_meus_pedidos(db: DbDep, participante: ParticipanteUser):
 @router.get("/pedidos/{pedido_id}", response_model=PedidoResponse)
 async def obter_pedido(pedido_id: uuid.UUID, db: DbDep, usuario: CurrentUser):
     return await pedido_service.obter(db, usuario, pedido_id)
+
+
+@router.get(
+    "/pedidos/{pedido_id}/pagamento", response_model=PagamentoStatusResponse
+)
+async def obter_status_pagamento(
+    pedido_id: uuid.UUID, db: DbDep, participante: ParticipanteUser
+):
+    return await pedido_service.obter_status_pagamento(db, participante, pedido_id)
 
 
 @router.post("/pedidos/{pedido_id}/cancelar", response_model=PedidoResponse)

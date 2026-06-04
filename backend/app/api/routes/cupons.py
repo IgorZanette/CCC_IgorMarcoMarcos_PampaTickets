@@ -57,12 +57,13 @@ async def validar_cupom(
         codigo=data.codigo,
         valor_base=data.valor_base,
     )
+    desconto = float(valor_desconto)
     return CupomValidarResponse(
         cupom_id=cupom.id,
         codigo=cupom.codigo,
         tipo_desconto=cupom.tipo_desconto,
-        valor_desconto_aplicado=valor_desconto,
-        valor_final=round(data.valor_base - valor_desconto, 2),
+        valor_desconto_aplicado=desconto,
+        valor_final=round(data.valor_base - desconto, 2),
     )
 
 

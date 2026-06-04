@@ -4,6 +4,7 @@ from datetime import datetime
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     DateTime,
     Enum,
     ForeignKey,
@@ -25,6 +26,15 @@ class TipoLote(str, enum.Enum):
 
 class Lote(Base):
     __tablename__ = "lotes_ingresso"
+    __table_args__ = (
+        CheckConstraint(
+            "quantidade_vendida >= 0", name="ck_lote_vendida_nao_negativa"
+        ),
+        CheckConstraint(
+            "quantidade_vendida <= quantidade_total",
+            name="ck_lote_vendida_ate_total",
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     evento_id: Mapped[uuid.UUID] = mapped_column(
