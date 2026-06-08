@@ -1,30 +1,34 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-import { login } from "../../api/auth";
+import { solicitarRecuperacaoSenha } from "../../api/auth";
 import { extractErrorMessage } from "../../lib/errors";
 import { AuthShell } from "./AuthShell";
 import forms from "./forms.module.css";
 
-export const LoginPage = () => {
+export const ForgotPasswordPage = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
-  const [senha, setSenha] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      const usuario = await login({ email, senha });
-      navigate(usuario.perfil === "ORGANIZADOR" ? "/organizador" : "/inicio");
+      await solicitarRecuperacaoSenha({ email });
+      setSuccess(true);
+      // Redirecionar após 2 segundos
+      setTimeout(() => {
+        navigate("/validar-codigo", { state: { email } });
+      }, 2000);
     } catch (err: unknown) {
       setError(
         extractErrorMessage(
           err,
-          "Não foi possível entrar. Verifique suas credenciais.",
+          "Não foi possível enviar o código. Tente novamente.",
         ),
       );
     } finally {
@@ -32,15 +36,37 @@ export const LoginPage = () => {
     }
   };
 
+  if (success) {
+    return (
+      <AuthShell
+        title="Código Enviado"
+        subtitle="Verifique seu email para o código de 6 dígitos."
+        footer={
+          <>
+            <p style={{ textAlign: "center", color: "var(--pt-text-dim)", fontSize: 14 }}>
+              Redirecionando para validação...
+            </p>
+          </>
+        }
+      >
+        <div style={{ textAlign: "center", padding: "20px 0" }}>
+          <p style={{ color: "var(--pt-success)", fontSize: 14, fontWeight: 600 }}>
+            ✓ Email enviado com sucesso para {email}
+          </p>
+        </div>
+      </AuthShell>
+    );
+  }
+
   return (
     <AuthShell
-      title="Entrar"
-      subtitle="Acesse sua conta participante ou organizadora."
+      title="Esqueci Minha Senha"
+      subtitle="Informe seu email para receber um código de recuperação."
       footer={
         <>
-          Ainda não tem conta?{" "}
-          <Link to="/cadastro" style={{ color: "var(--pt-accent)", fontWeight: 600 }}>
-            Cadastre-se
+          Voltou para a memória?{" "}
+          <Link to="/login" style={{ color: "var(--pt-accent)", fontWeight: 600 }}>
+            Entrar
           </Link>
         </>
       }
@@ -61,37 +87,10 @@ export const LoginPage = () => {
             autoFocus
           />
         </div>
-        <div className={forms.field}>
-          <label className={forms.label} htmlFor="senha">
-            Senha
-          </label>
-          <input
-            id="senha"
-            type="password"
-            className={forms.input}
-            value={senha}
-            onChange={(e) => setSenha(e.target.value)}
-            placeholder="••••••••"
-            required
-          />
-        </div>
         {error && <div className={forms.error}>⚠ {error}</div>}
         <button type="submit" className={forms.primary} disabled={loading}>
-          {loading ? "Entrando…" : "Entrar →"}
+          {loading ? "Enviando…" : "Enviar Código →"}
         </button>
-        <Link
-          to="/esqueci-senha"
-          style={{
-            textAlign: "center",
-            color: "var(--pt-accent)",
-            fontWeight: 600,
-            fontSize: 13,
-            textDecoration: "none",
-            marginTop: 4,
-          }}
-        >
-          Esqueci minha senha
-        </Link>
       </form>
     </AuthShell>
   );

@@ -63,3 +63,44 @@ class TokenResponse(BaseModel):
     access_token: str = Field(..., examples=["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."])
     token_type: str = Field(default="bearer", examples=["bearer"])
     usuario: UsuarioResponse
+
+
+class RecuperacaoSenhaRequest(BaseModel):
+    """Request para solicitar recuperação de senha."""
+
+    email: EmailStr = Field(..., examples=["marco.antonio@santolin.com.br"])
+
+
+class ValidarCodigoRecuperacaoRequest(BaseModel):
+    """Request para validar código de recuperação."""
+
+    email: EmailStr = Field(..., examples=["marco.antonio@santolin.com.br"])
+    codigo: str = Field(..., min_length=6, max_length=6, examples=["123456"])
+
+
+class RedefinirSenhaRequest(BaseModel):
+    """Request para redefinir a senha."""
+
+    email: EmailStr = Field(..., examples=["marco.antonio@santolin.com.br"])
+    codigo: str = Field(..., min_length=6, max_length=6, examples=["123456"])
+    nova_senha: str = Field(..., min_length=8, max_length=72, examples=["NovaaSenha123"])
+
+    @field_validator("nova_senha")
+    @classmethod
+    def validar_forca_senha(cls, v: str) -> str:
+        if not re.search(r"[A-Za-z]", v) or not re.search(r"\d", v):
+            raise ValueError("A senha deve conter ao menos uma letra e um número.")
+        return v
+
+
+class RecuperacaoSenhaResponse(BaseModel):
+    """Response de recuperação de senha iniciada."""
+
+    mensagem: str = Field(..., examples=["Email enviado com sucesso"])
+
+
+class CodigoValidadoResponse(BaseModel):
+    """Response quando código é validado."""
+
+    token: str = Field(..., examples=["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."])
+    mensagem: str = Field(..., examples=["Código validado com sucesso"])

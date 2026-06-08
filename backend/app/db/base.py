@@ -19,6 +19,7 @@ from app.models.checkin import Checkin  # noqa: E402
 from app.models.certificado import Certificado  # noqa: E402
 from app.models.relatorio import Relatorio  # noqa: E402
 from app.models.foto import FotoEvento, CompraFoto  # noqa: E402
+from app.models.recuperacao_senha import RecuperacaoSenha  # noqa: E402
 
 __all__ = [
     "Usuario",
@@ -36,6 +37,7 @@ __all__ = [
     "Relatorio",
     "FotoEvento",
     "CompraFoto",
+    "RecuperacaoSenha",
 ]
 
 
