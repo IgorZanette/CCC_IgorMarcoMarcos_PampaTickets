@@ -10,6 +10,9 @@ import { OrganizerLayout } from "./layouts/OrganizerLayout";
 import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/auth/LoginPage";
 import { CadastroPage } from "./pages/auth/CadastroPage";
+import { ForgotPasswordPage } from "./pages/auth/ForgotPasswordPage";
+import { ValidateCodePage } from "./pages/auth/ValidateCodePage";
+import { ResetPasswordPage } from "./pages/auth/ResetPasswordPage";
 
 import { HomePage } from "./pages/participante/HomePage";
 import { SearchPage } from "./pages/participante/SearchPage";
@@ -44,6 +47,9 @@ export const App = () => {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/cadastro" element={<CadastroPage />} />
+      <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
+      <Route path="/validar-codigo" element={<ValidateCodePage />} />
+      <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
 
       {/* Vitrine e fluxo do participante (tema escuro) */}
       <Route element={<ParticipantLayout />}>

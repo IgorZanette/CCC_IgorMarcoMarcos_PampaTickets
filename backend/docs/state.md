@@ -7,8 +7,8 @@
 
 ## Última atualização
 
-**Data:** 04/06/2026
-**Responsável:** Marco Antonio Santolin
+**Data:** 09/06/2026
+**Responsável:** Igor Zanette (recuperação de senha) + Marco Antonio Santolin (merge)
 
 ---
 
@@ -27,27 +27,65 @@
 - [x] UC12 — Geração de Ingresso PDF
 - [x] UC13 — Geração de Certificado PDF
 - [x] UC14 — Relatório Financeiro PDF (download em PDF + resumo em JSON)
+- [x] **Recuperação de Senha** — Email com código de 6 dígitos (novo)
 - [ ] UC15 — Notificações WhatsApp
 - [ ] UC08 — Galeria de Fotos (baixa prioridade)
 
 Endpoints extras (fora dos UCs originais):
 - [x] `GET /api/organizador/eventos/{id}/ingressos` — listagem de ingressos vendidos por evento (painel do organizador)
+- [x] `POST /api/auth/forgot-password` — solicita recuperação de senha
+- [x] `POST /api/auth/validate-reset-code` — valida código de 6 dígitos
+- [x] `POST /api/auth/reset-password` — redefine a senha
+
+---
+
+## Implementação da Recuperação de Senha (07/06/2026)
+
+### Backend
+- **Modelo:** `RecuperacaoSenha` com status (PENDENTE, VALIDADO, UTILIZADO, EXPIRADO)
+- **Migração:** `d1a2b3c4e5f6_adiciona_tabela_recuperacao_senhas.py`
+- **Serviço de Email:** `app/integrations/email_service.py` usando SMTP Gmail
+- **Endpoints:**
+  - `POST /api/auth/forgot-password` — gera código de 6 dígitos e envia por email
+  - `POST /api/auth/validate-reset-code` — valida o código e retorna token temporário
+  - `POST /api/auth/reset-password` — redefine a senha após validação
+- **Configurações:** `.env.example` atualizado com credenciais SMTP
+- **Rate Limiting:** 5 req/min para solicitar, 10 req/min para validar, 5 req/min para redefinir
+- **Expiração:** Código válido por 15 minutos (configurável em `PASSWORD_RESET_EXPIRE_MINUTES`)
+
+### Frontend
+- **Páginas:**
+  - `ForgotPasswordPage.tsx` — solicita email do usuário
+  - `ValidateCodePage.tsx` — valida código com máscaras e feedback
+  - `ResetPasswordPage.tsx` — redefine a senha com validações
+- **API:** Funções adicionadas em `api/auth.ts`
+- **Rotas:** `/esqueci-senha`, `/validar-codigo`, `/redefinir-senha`
+- **Link:** Adicionado "Esqueci minha senha" na página de login
+
+### Segurança
+- Emails não são revelados como válidos/inválidos (proteção contra enumeration)
+- Códigos são aleatórios de 6 dígitos
+- Tokens são gerados com `secrets.token_urlsafe(32)`
+- Senhas são hashadas com bcrypt
+- Expiração automática de tokens após 15 minutos
 
 ---
 
 ## Em progresso
 
-Nada em aberto. Com UC14 entregue, o próximo ciclo é UC15 (WhatsApp) ou reembolso em massa por cancelamento de evento, conforme prioridade do dono do produto.
+Nada em aberto. Recuperação de senha entregue e testável.
 
 ---
 
 ## Próximo passo
 
-1. **UC15 — Notificações WhatsApp**: criar `app/integrations/whatsapp/` (Meta Cloud API) e disparar em pagamento confirmado, check-in realizado, véspera do evento e cancelamento de evento.
-2. **Validar UC10 em sandbox**: rodar o roteiro de smoke (POST /api/pedidos/{id}/reembolso) e confirmar que webhook PAYMENT_REFUNDED cancela ingressos — pendência arrastada desde 11/05.
-3. **Tratar as ressalvas da PR `ad83d78`** (ver lista de dívida técnica): estorno de cupom em pedido pago e atomicidade da cascata de cancelamento de evento.
+1. **Testar fluxo completo da recuperação de senha:** rodar `make up` e validar o fluxo end-to-end (solicitar → validar → redefinir).
+2. **UC15 — Notificações WhatsApp**: criar `app/integrations/whatsapp/` (Meta Cloud API) e disparar em pagamento confirmado, check-in realizado, véspera do evento e cancelamento de evento.
+3. **Validar UC10 em sandbox**: rodar o roteiro de smoke (POST /api/pedidos/{id}/reembolso) e confirmar que webhook PAYMENT_REFUNDED cancela ingressos — pendência arrastada desde 11/05.
+4. **Tratar as ressalvas da PR `ad83d78`** (ver lista de dívida técnica): estorno de cupom em pedido pago e atomicidade da cascata de cancelamento de evento.
 
 > Reembolso em massa por cancelamento de evento e suíte de testes foram entregues no merge `ad83d78` (04/06/2026).
+
 
 ---
 

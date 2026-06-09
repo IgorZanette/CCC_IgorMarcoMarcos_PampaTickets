@@ -55,3 +55,48 @@ export const logout = () => {
   setToken(null);
   setStoredUser(null);
 };
+
+export type RecuperacaoSenhaPayload = {
+  email: string;
+};
+
+export type ValidarCodigoPayload = {
+  email: string;
+  codigo: string;
+};
+
+export type RedefinirSenhaPayload = {
+  email: string;
+  codigo: string;
+  nova_senha: string;
+};
+
+export const solicitarRecuperacaoSenha = async (
+  payload: RecuperacaoSenhaPayload,
+): Promise<{ mensagem: string }> => {
+  const { data } = await api.post<{ mensagem: string }>(
+    "/auth/forgot-password",
+    payload,
+  );
+  return data;
+};
+
+export const validarCodigoRecuperacao = async (
+  payload: ValidarCodigoPayload,
+): Promise<{ token: string; mensagem: string }> => {
+  const { data } = await api.post<{ token: string; mensagem: string }>(
+    "/auth/validate-reset-code",
+    payload,
+  );
+  return data;
+};
+
+export const redefinirSenha = async (
+  payload: RedefinirSenhaPayload,
+): Promise<{ mensagem: string }> => {
+  const { data } = await api.post<{ mensagem: string }>(
+    "/auth/reset-password",
+    payload,
+  );
+  return data;
+};

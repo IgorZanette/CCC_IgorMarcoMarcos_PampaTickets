@@ -24,6 +24,15 @@ class Settings(BaseSettings):
     ASAAS_BASE_URL_UAT: str
     ASAAS_WEBHOOK_TOKEN: str
 
+    # Email (recuperação de senha)
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: str = "pampatickets@gmail.com"
+    SMTP_PASSWORD: str
+    EMAIL_FROM: str = "pampatickets@gmail.com"
+    EMAIL_FROM_NAME: str = "PampaTickets"
+    PASSWORD_RESET_EXPIRE_MINUTES: int = 15
+
     # # Meta Cloud API — WhatsApp Business
     # META_WHATSAPP_TOKEN: str
     # META_PHONE_NUMBER_ID: str
