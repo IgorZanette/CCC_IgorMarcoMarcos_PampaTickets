@@ -167,7 +167,7 @@ Nada em aberto. Recuperação de senha entregue e testável.
 - **CORS em produção**: middleware habilitado, mas as origens precisam ser revistas antes de qualquer deploy.
 - **Seed de dados** para desenvolvimento: descartada em 24/05/2026 — usuários de teste são criados manualmente via `POST /api/auth/cadastro`.
 - **Modelos sem rotas restantes**: `FotoEvento`/`CompraFoto` (UC08) — modelos ORM existem mas faltam repositório/service/rotas. ~~`Cupom` (UC05)~~ e ~~`Cortesia` (UC06)~~ resolvidos em 24/05/2026. ~~`Relatorio` (UC14)~~ — UC14 entregue em 30/05/2026 **sem** persistir o model `Relatorio` (relatório é regenerado sob demanda, não salvo); a tabela existe mas segue sem uso, candidata a virar log de auditoria ou ser removida.
-- **UC15 não iniciado**: integração com Meta Cloud API (WhatsApp) precisa ser criada do zero em `app/integrations/whatsapp/`.
+- **UC15 não iniciado**: integração com Meta Cloud API (WhatsApp) precisa ser criada do zero em `app/integrations/whatsapp/`. (11/06/2026 — Marco) Removida a config comentada `META_WHATSAPP_TOKEN`/`META_PHONE_NUMBER_ID`/`META_VERIFY_TOKEN` de `core/config.py` — era placeholder morto; reintroduzir junto da implementação da integração.
 - ~~**`PAYMENT_REFUNDED` não cancela ingressos**~~ resolvido no UC10: agora cancela todos os ingressos do pedido reembolsado.
 - ~~**`gerar_pdf_ingresso_upload` engole exceções silenciosamente**~~ resolvido em 11/05/2026: aplicado em todos os call sites (`gerar_pdf_ingresso_upload`, `gerar_pdf_certificado_upload`, `validar_checkin`, `_gerar_pdfs_ingressos`) via `logger.exception`.
 - ~~**Tabela `checkins` órfã**~~ resolvido em 24/05/2026: `validar_checkin` persiste `Checkin` via `checkin_repo.create` antes do update de status.

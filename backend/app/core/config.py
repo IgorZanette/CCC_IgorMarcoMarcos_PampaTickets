@@ -33,11 +33,6 @@ class Settings(BaseSettings):
     EMAIL_FROM_NAME: str = "PampaTickets"
     PASSWORD_RESET_EXPIRE_MINUTES: int = 15
 
-    # # Meta Cloud API — WhatsApp Business
-    # META_WHATSAPP_TOKEN: str
-    # META_PHONE_NUMBER_ID: str
-    # META_VERIFY_TOKEN: str
-
     model_config = SettingsConfigDict(
         env_file="../.env", env_file_encoding="utf-8", extra="ignore"
     )

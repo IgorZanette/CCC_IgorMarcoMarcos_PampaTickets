@@ -5,37 +5,34 @@ import { useEffect, useState } from "react";
 
 import { obterEventoOrganizador, type Evento } from "../api/eventos";
 
+// O resultado carrega o `id` a que pertence — assim a staleness (resultado de um id
+// anterior durante a navegação) vira derivação no render, sem precisar resetar estado
+// dentro do effect (que dispara re-renders em cascata; ver react-hooks/set-state-in-effect).
+type EventoState = { id: string; evento: Evento | null; error: boolean };
+
 export const useEvento = (id: string | null | undefined) => {
-  const [evento, setEvento] = useState<Evento | null>(null);
-  const [error, setError] = useState<boolean>(false);
+  const [state, setState] = useState<EventoState | null>(null);
 
   useEffect(() => {
-    if (!id) {
-      setEvento(null);
-      setError(false);
-      return;
-    }
+    if (!id) return;
     let cancelled = false;
-    setError(false);
     obterEventoOrganizador(id)
       .then((data) => {
-        if (!cancelled) setEvento(data);
+        if (!cancelled) setState({ id, evento: data, error: false });
       })
       .catch(() => {
-        if (!cancelled) {
-          setEvento(null);
-          setError(true);
-        }
+        if (!cancelled) setState({ id, evento: null, error: true });
       });
     return () => {
       cancelled = true;
     };
   }, [id]);
 
-  // `loading` é derivado: temos id mas ainda não temos o evento certo hidratado e não falhou.
+  // Só consideramos o estado se ele for do id atual; senão ainda está carregando.
+  const fresh = id && state?.id === id ? state : null;
   return {
-    evento: id ? evento : null,
-    loading: id != null && evento?.id !== id && !error,
-    error,
+    evento: fresh?.evento ?? null,
+    loading: id != null && fresh === null,
+    error: fresh?.error ?? false,
   };
 };

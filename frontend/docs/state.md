@@ -7,9 +7,17 @@
 
 ## Última atualização
 
-**Data:** 30/05/2026
+**Data:** 11/06/2026
 **Responsável:** Marco Antonio Santolin
 
+> Disponibilidade de lote no fluxo de compra (11/06/2026) — **helper compartilhado + revalidação no checkout**:
+> 1. **Novo `lib/lote.ts` (`avaliarLote`)**: helper que espelha as regras de compra do backend (`pedido_service.criar`) — um lote só é comprável se estiver **ativo, dentro da janela de venda e com estoque**. Centraliza os motivos de indisponibilidade (`esgotado`, `encerrado`, `nao_iniciado`, `inativo`), seus rótulos e a precedência do rótulo (informação mais útil ao usuário primeiro). Retorna `{ disponivel, motivo, rotulo, restantes }`. As datas são comparadas como instantes (UTC), independente de fuso — a conversão de São Paulo é só para exibição.
+> 2. **`EventoPage`**: deixou de calcular `esgotado`/`inativo` na mão e passou a usar `avaliarLote`. Os rótulos agora cobrem todos os motivos, incluindo **"Vendas abrem `<data>`"** para lotes ainda não iniciados (antes só mostrava "Esgotado"/"Indisponível"). `dateShort` adicionado ao import.
+> 3. **`CheckoutPage`**: **revalida a disponibilidade antes de confirmar o pagamento** — um lote pode expirar ou esgotar entre a seleção e o checkout. Calcula `itensIndisponiveis` (sumido, indisponível, ou quantidade maior que a restante) e, se houver, **bloqueia o botão "Confirmar pagamento"** mostrando aviso amigável com o motivo por item + link "← Revisar ingressos", em vez de deixar o backend recusar com 409.
+> 4. **Refactor id-aware (`active-event.ts` `useEvento` + métricas da `OrgEventoPage`)**: o resultado da API passou a carregar o `id` a que pertence (`{ id, evento/data, error }`). A staleness durante a navegação (resultado de um id anterior) virou **derivação no render** (`state?.id === id ? state : null`), eliminando o `setState` síncrono dentro do effect (lint `react-hooks/set-state-in-effect`) e os re-renders em cascata.
+> 5. **UI**: marca da sidebar do organizador (`OrganizerLayout`) passou a empilhar logo + papel em coluna (`flex-direction: column`).
+> 6. **Backend (chore)**: removida a config comentada do Meta WhatsApp (UC15) em `core/config.py` — será reintroduzida quando a integração for implementada.
+>
 > Reformulação do painel do organizador (30/05/2026) — **rotas por evento, fim do "evento ativo" em localStorage**:
 > 1. **Rotas aninhadas por evento**: as telas do organizador passaram de rotas singulares (`/organizador/lotes`, `/cupons`, …) para `/organizador/eventos/:id/...` (`/lotes`, `/cupons`, `/cortesias`, `/checkin`, `/participantes`, `/financeiro`). O `:id` na URL é a fonte da verdade — dá pra abrir por link, o back do navegador e o refresh funcionam.
 > 2. **Fim do localStorage de evento ativo**: `lib/active-event.ts` deixou de guardar/emitir o id em `localStorage`; virou o hook `useEvento(id)` que só hidrata o `Evento` a partir do id da rota. `getActiveEventId`/`setActiveEventId`/`useActiveEvent` removidos.
@@ -86,6 +94,7 @@
 
 - [x] `lib/format.ts`: `money`, `moneyShort`, `dateShort`, `dateLong`, `dateFull`, `formatCpfCnpj`, `formatCelular`.
 - [x] `lib/errors.ts`: `extractErrorMessage` entende `detail` como string OU lista de violações Pydantic, e remove o prefixo "Value error, " que o Pydantic adiciona em `@field_validator`.
+- [x] `lib/lote.ts`: `avaliarLote(lote, agora?)` → `{ disponivel, motivo, rotulo, restantes }`. Espelha as regras de compra do backend (`pedido_service.criar`); usado em `EventoPage` (rótulos de disponibilidade) e `CheckoutPage` (bloqueio antes do pagamento). Motivos: `esgotado`, `encerrado`, `nao_iniciado`, `inativo`.
 
 ---
 

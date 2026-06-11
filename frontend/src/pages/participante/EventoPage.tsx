@@ -11,7 +11,8 @@ import { listarLotes, type Lote } from "../../api/lotes";
 import { validarCupom, type CupomValidacao } from "../../api/cupons";
 import { useCurrentUser } from "../../lib/auth-store";
 import { extractErrorMessage } from "../../lib/errors";
-import { dateFull, money } from "../../lib/format";
+import { dateFull, dateShort, money } from "../../lib/format";
+import { avaliarLote } from "../../lib/lote";
 
 import styles from "./EventoPage.module.css";
 
@@ -156,12 +157,11 @@ export const EventoPage = () => {
               <div className={styles.empty}>Nenhum lote disponível.</div>
             )}
             {lotes.map((l) => {
-              const restantes = l.quantidade_disponivel;
-              const inativo = !l.ativo;
-              const esgotado = restantes === 0;
-              const indisponivel = inativo || esgotado;
+              const disp = avaliarLote(l);
+              const restantes = disp.restantes;
+              const indisponivel = !disp.disponivel;
               const acabando =
-                !indisponivel && restantes / l.quantidade_total < 0.1;
+                disp.disponivel && restantes / l.quantidade_total < 0.1;
               const qty = selected[l.id] ?? 0;
               return (
                 <div
@@ -177,11 +177,12 @@ export const EventoPage = () => {
                         ⚠ Apenas {restantes} restantes
                       </div>
                     )}
-                    {esgotado && (
-                      <div className={styles.loteEsgotado}>Esgotado</div>
-                    )}
-                    {inativo && !esgotado && (
-                      <div className={styles.loteEsgotado}>Indisponível</div>
+                    {disp.rotulo && (
+                      <div className={styles.loteEsgotado}>
+                        {disp.motivo === "nao_iniciado"
+                          ? `Vendas abrem ${dateShort(l.data_inicio_venda)}`
+                          : disp.rotulo}
+                      </div>
                     )}
                   </div>
                   <div className={styles.lotePreco}>{money(l.preco)}</div>

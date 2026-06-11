@@ -29,24 +29,35 @@ export const OrgEventoPage = () => {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [resumo, setResumo] = useState<RelatorioResumo | null>(null);
-  const [resumoError, setResumoError] = useState<string | null>(null);
+  // Estado id-aware das métricas: carrega o id a que pertence, então a troca de evento
+  // na navegação é resolvida por derivação no render (sem reset síncrono no effect).
+  const [resumoState, setResumoState] = useState<{
+    id: string;
+    data: RelatorioResumo | null;
+    error: string | null;
+  } | null>(null);
   const [baixando, setBaixando] = useState(false);
 
   const ev = current ?? evento;
 
+  const resumoAtual = id && resumoState?.id === id ? resumoState : null;
+  const resumo = resumoAtual?.data ?? null;
+  const resumoError = resumoAtual?.error ?? null;
+
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
-    setResumo(null);
-    setResumoError(null);
     obterResumoRelatorio(id)
       .then((data) => {
-        if (!cancelled) setResumo(data);
+        if (!cancelled) setResumoState({ id, data, error: null });
       })
       .catch((err) => {
         if (!cancelled)
-          setResumoError(extractErrorMessage(err, "Falha ao carregar métricas."));
+          setResumoState({
+            id,
+            data: null,
+            error: extractErrorMessage(err, "Falha ao carregar métricas."),
+          });
       });
     return () => {
       cancelled = true;
@@ -98,7 +109,9 @@ export const OrgEventoPage = () => {
     try {
       await baixarRelatorio(ev.id);
     } catch (err) {
-      setResumoError(extractErrorMessage(err, "Falha ao baixar o relatório."));
+      const msg = extractErrorMessage(err, "Falha ao baixar o relatório.");
+      // O botão de baixar só aparece com `resumo` carregado, então há estado do id atual.
+      setResumoState((prev) => (prev ? { ...prev, error: msg } : prev));
     } finally {
       setBaixando(false);
     }

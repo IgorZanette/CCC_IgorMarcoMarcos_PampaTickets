@@ -23,8 +23,9 @@
 .brand {
   padding: 0 24px 32px;
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
 }
 
 .brandRole {

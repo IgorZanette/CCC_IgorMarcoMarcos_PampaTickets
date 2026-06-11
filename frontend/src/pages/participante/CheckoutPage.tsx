@@ -8,6 +8,7 @@ import { validarCupom, type CupomValidacao } from "../../api/cupons";
 import { useCurrentUser } from "../../lib/auth-store";
 import { extractErrorMessage } from "../../lib/errors";
 import { dateLong, formatCelular, formatCpfCnpj, money } from "../../lib/format";
+import { avaliarLote } from "../../lib/lote";
 
 import type { PendingOrder } from "./EventoPage";
 
@@ -98,6 +99,21 @@ export const CheckoutPage = () => {
   }, 0);
   const totalComDesconto = cupom ? cupom.valor_final : subtotal;
 
+  // Lotes carregados frescos no load — revalida disponibilidade aqui também: um lote
+  // pode ter expirado ou esgotado entre a seleção e o pagamento. Bloqueia o envio
+  // com aviso amigável em vez de deixar o backend recusar com 409.
+  const itensIndisponiveis = pending.itens.flatMap((it) => {
+    const lote = lotePorId.get(it.loteId);
+    if (!lote) return [{ nome: "Ingresso", motivo: "Não está mais disponível" }];
+    const disp = avaliarLote(lote);
+    if (!disp.disponivel)
+      return [{ nome: lote.nome, motivo: disp.rotulo ?? "Indisponível" }];
+    if (it.quantidade > disp.restantes)
+      return [{ nome: lote.nome, motivo: `Restam apenas ${disp.restantes}` }];
+    return [];
+  });
+  const bloqueado = itensIndisponiveis.length > 0;
+
   const aplicarCupom = async () => {
     if (subtotal <= 0) return;
     setValidandoCupom(true);
@@ -124,6 +140,7 @@ export const CheckoutPage = () => {
       navigate("/login");
       return;
     }
+    if (bloqueado) return;
     setSubmitting(true);
     setError(null);
     try {
@@ -293,12 +310,25 @@ export const CheckoutPage = () => {
               <span>Total</span>
               <span>{money(totalComDesconto)}</span>
             </div>
+            {bloqueado && (
+              <div className={styles.errorMsg}>
+                ⚠ Alguns itens não estão mais disponíveis:
+                {itensIndisponiveis.map((it, i) => (
+                  <div key={i}>
+                    • {it.nome} — {it.motivo}
+                  </div>
+                ))}
+                <Link to={`/eventos/${ev.id}`} className={styles.back}>
+                  ← Revisar ingressos
+                </Link>
+              </div>
+            )}
             {error && <div className={styles.errorMsg}>⚠ {error}</div>}
             <button
               type="button"
               className={styles.cta}
               onClick={confirmar}
-              disabled={submitting}
+              disabled={submitting || bloqueado}
             >
               {submitting ? "Criando pedido…" : "Confirmar pagamento"}
             </button>
