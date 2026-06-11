@@ -1,9 +1,7 @@
 """Serviço para gerenciar recuperação de senha."""
 
-import random
 import secrets
 import string
-import uuid
 from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException, status
@@ -16,8 +14,8 @@ from app.repositories import recuperacao_senha_repo, usuario_repo
 
 
 def _gerar_codigo_6_digitos() -> str:
-    """Gera um código aleatório de 6 dígitos."""
-    return "".join(random.choices(string.digits, k=6))
+    """Gera um código aleatório de 6 dígitos usando CSPRNG (secrets)."""
+    return "".join(secrets.choice(string.digits) for _ in range(6))
 
 
 def _gerar_token_seguro() -> str:
