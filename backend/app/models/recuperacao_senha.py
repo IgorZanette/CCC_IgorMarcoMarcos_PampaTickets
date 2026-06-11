@@ -1,6 +1,6 @@
 import enum
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from sqlalchemy import DateTime, Enum, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column

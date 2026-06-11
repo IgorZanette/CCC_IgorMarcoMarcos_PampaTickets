@@ -3,7 +3,6 @@
 import random
 import secrets
 import string
-import uuid
 from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException, status
