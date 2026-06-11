@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import OrganizadorUser, ParticipanteUser
 from app.db.session import get_db
-from app.repositories import evento_repo, ingresso_repo
+from app.repositories import evento_repo, ingresso_repo, reembolso_repo
 from app.schemas.ingresso import IngressoOrganizadorResponse, IngressoResponse
 
 router = APIRouter(tags=["Ingressos"])
@@ -41,7 +41,20 @@ async def listar_meus_ingressos(
     db: AsyncSession = Depends(get_db),
 ) -> list[IngressoResponse]:
     ingressos = await ingresso_repo.list_by_participante(db, participante.id)
-    return [IngressoResponse.from_ingresso(i) for i in ingressos]
+    pedido_ids = {
+        i.pedido_item.pedido_id for i in ingressos if i.pedido_item is not None
+    }
+    reembolsados = await reembolso_repo.pedido_ids_com_reembolso(db, pedido_ids)
+    return [
+        IngressoResponse.from_ingresso(
+            i,
+            reembolso_solicitado=(
+                i.pedido_item is not None
+                and i.pedido_item.pedido_id in reembolsados
+            ),
+        )
+        for i in ingressos
+    ]
 
 
 @router.get("/ingressos/{ingresso_id}", response_model=IngressoResponse)
@@ -61,4 +74,13 @@ async def obter_ingresso(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Você não tem acesso a este ingresso.",
         )
-    return IngressoResponse.from_ingresso(ingresso)
+    reembolsados = (
+        await reembolso_repo.pedido_ids_com_reembolso(
+            db, [ingresso.pedido_item.pedido_id]
+        )
+        if ingresso.pedido_item is not None
+        else set()
+    )
+    return IngressoResponse.from_ingresso(
+        ingresso, reembolso_solicitado=bool(reembolsados)
+    )

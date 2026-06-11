@@ -16,11 +16,20 @@ class IngressoResponse(BaseModel):
     evento_data_inicio: datetime
     evento_local: str
     lote_nome: str
+    # Nulo para cortesias (ingresso sem pedido). Permite ao frontend acionar
+    # o reembolso do pedido (UC10) a partir da tela "Meus ingressos".
+    pedido_id: uuid.UUID | None
+    # True quando o reembolso do pedido já foi solicitado mas o webhook do
+    # Asaas ainda não confirmou o estorno (ingresso segue ATIVO nesse meio
+    # tempo) — o frontend usa isso para não oferecer o botão de novo.
+    reembolso_solicitado: bool = False
 
     model_config = {"from_attributes": True}
 
     @classmethod
-    def from_ingresso(cls, ing: Ingresso) -> "IngressoResponse":
+    def from_ingresso(
+        cls, ing: Ingresso, *, reembolso_solicitado: bool = False
+    ) -> "IngressoResponse":
         return cls(
             id=ing.id,
             qr_code_hash=ing.qr_code_hash,
@@ -31,6 +40,8 @@ class IngressoResponse(BaseModel):
             evento_data_inicio=ing.lote.evento.data_inicio,
             evento_local=ing.lote.evento.local,
             lote_nome=ing.lote.nome,
+            pedido_id=ing.pedido_item.pedido_id if ing.pedido_item else None,
+            reembolso_solicitado=reembolso_solicitado,
         )
 
 
