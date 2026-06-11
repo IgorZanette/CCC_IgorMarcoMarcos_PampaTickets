@@ -8,8 +8,13 @@
 ## Última atualização
 
 **Data:** 11/06/2026
-**Responsável:** Marco Antonio Santolin
+**Responsável:** Marcos Paulo (reembolso UC10 + testes + CI); Marco Antonio Santolin (disponibilidade de lote)
 
+> Reembolso do participante, primeira suíte de testes e CI (11/06/2026 — branch `feat/reembolso-participante`):
+> 1. **Reembolso (UC10)**: botão "Solicitar reembolso" nos ingressos ATIVOS de eventos futuros em `MyTicketsPage` + `ReembolsoModal` (motivo opcional ≤500 chars, aviso de que o reembolso vale para o **pedido inteiro**, focus trap, Escape/overlay bloqueados durante o envio). `Ingresso` ganhou `pedido_id` (nulo p/ cortesia) e `reembolso_solicitado` vindos do backend — o estado "solicitado · aguardando confirmação" **sobrevive a reload** (o status real do ingresso só muda quando o webhook do Asaas confirmar o estorno).
+> 2. **Suíte de testes (Vitest + Testing Library — 32 testes, `npm test`)**: `avaliarLote` (espelho das regras do backend), formatadores pt-BR/fuso SP, `extractErrorMessage`, guards do `RequireAuth` e o fluxo completo do reembolso (sucesso multi-ingresso, motivo null, estado do backend, cortesia sem botão, 409 mantém o modal). Setup em `src/test/setup.ts` (jsdom + jest-dom + cleanup explícito — globals desativados); `vite.config.ts` passou a importar de `vitest/config`.
+> 3. **CI (GitHub Actions)**: `.github/workflows/ci.yml` roda ruff+pytest no backend e eslint+vitest+build aqui, em PRs e push na main.
+>
 > Disponibilidade de lote no fluxo de compra (11/06/2026) — **helper compartilhado + revalidação no checkout**:
 > 1. **Novo `lib/lote.ts` (`avaliarLote`)**: helper que espelha as regras de compra do backend (`pedido_service.criar`) — um lote só é comprável se estiver **ativo, dentro da janela de venda e com estoque**. Centraliza os motivos de indisponibilidade (`esgotado`, `encerrado`, `nao_iniciado`, `inativo`), seus rótulos e a precedência do rótulo (informação mais útil ao usuário primeiro). Retorna `{ disponivel, motivo, rotulo, restantes }`. As datas são comparadas como instantes (UTC), independente de fuso — a conversão de São Paulo é só para exibição.
 > 2. **`EventoPage`**: deixou de calcular `esgotado`/`inativo` na mão e passou a usar `avaliarLote`. Os rótulos agora cobrem todos os motivos, incluindo **"Vendas abrem `<data>`"** para lotes ainda não iniciados (antes só mostrava "Esgotado"/"Indisponível"). `dateShort` adicionado ao import.
@@ -133,18 +138,18 @@ Nada em aberto. O painel do organizador agora cobre todos os endpoints do backen
 
 ## Pendências conhecidas
 
-- **Guards de rota ausentes**: hoje qualquer um navega para `/inicio`, `/meus-ingressos` ou `/organizador/*` sem auth. Backend rejeita as chamadas, mas a UX é ruim. Prioridade alta junto com o checkout.
+- ~~**Guards de rota ausentes**~~ resolvido em 04/06/2026 (merge `ad83d78`): `RequireAuth` protege `/meus-ingressos`, checkout e `/organizador/*` (com validação de perfil).
 - ~~**Rotas singulares do organizador**~~ resolvido em 30/05/2026: migradas para `/organizador/eventos/:id/...` (nested). O id vem da URL (`useParams`/`useMatch`), hidratado uma vez no `OrganizerLayout` e repassado via `Outlet context`. `useActiveEvent`/`localStorage` removidos (hook `useEvento(id)` no lugar).
 - **Sem refresh token**: quando o JWT expira (60min), o usuário vê erros 401 silenciosos. Solução depende do backend implementar refresh primeiro.
-- **Sem testes**: nenhum Vitest/Testing Library configurado. Dívida crítica antes do deploy.
+- ~~**Sem testes**~~ resolvido em 11/06/2026: Vitest + Testing Library (32 testes, `npm test`), rodando também no CI.
 - **Estados de loading/erro inconsistentes**: cada página trata do seu jeito. Falta um padrão (skeleton + retry).
 - **Acessibilidade**: contraste do tema escuro, labels, foco visível em modais — nada revisado.
 - **CORS em produção**: backend permite tudo hoje. Quando deploy, ajustar `VITE_API_URL` + lista de origens no backend.
 - **Validação de força de senha no cadastro**: hoje só checa o que o backend devolver. Validar no front antes de enviar.
-- **Polling vs WebSocket** para status do pagamento: a primeira versão do checkout vai usar polling (mais simples). Se virar gargalo, migrar para WS.
+- **Polling vs WebSocket** para status do pagamento: polling entregue na `PagamentoStatusPage` (3s até o pedido sair de PENDENTE). Se virar gargalo, migrar para WS.
 - **Backend sem categoria/imagem nos eventos**: chips de categoria foram removidos da UI. Imagens são gradients determinísticos por id. Se um dia o `Evento` ganhar `categoria` e `imagem_url`, repor.
 - ~~**`OrganizerLayout` com "Festival de Inverno" hard-coded**~~ resolvido em 30/05/2026: `EVENT_NAV` mostra `evento?.nome` via `useActiveEvent()` (fallback "Evento").
 - ~~**`AttendeesPage` e `FinancePage` placeholders**~~ resolvidos em 30/05/2026: `AttendeesPage` consome `GET /api/organizador/eventos/:id/ingressos`; `FinancePage` baixa o PDF do UC14 e o `DashboardPage` mostra as métricas via `/relatorio/resumo`.
 - ~~**Cliente de cupons (`api/cupons.ts`)**~~ criado em 30/05/2026 para o painel do organizador (criar/listar/editar/excluir). **Falta ainda** a função de validar/preview e o uso no checkout do participante (UC05).
-- **Cupom no checkout do participante**: `CheckoutPage` ainda não tem input de cupom nem preview de desconto.
-- **Reembolso (UC10) sem botão**: `reembolsarPedido` existe em `api/pedidos.ts`, falta o botão em `MyTicketsPage`.
+- ~~**Cupom no checkout do participante**~~ verificado como entregue em 11/06/2026: `CheckoutPage` tem input + preview via `validarCupom` (revalida cupom vindo da tela do evento) e envia `cupom_codigo` no pedido.
+- ~~**Reembolso (UC10) sem botão**~~ resolvido em 11/06/2026: botão + modal em `MyTicketsPage`; backend expõe `pedido_id`/`reembolso_solicitado` no `IngressoResponse`.
