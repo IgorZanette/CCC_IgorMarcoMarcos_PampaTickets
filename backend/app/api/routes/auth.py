@@ -39,6 +39,17 @@ async def me(current_user: CurrentUser):
     return current_user
 
 
+@router.post("/refresh", response_model=TokenResponse)
+@limiter.limit("30/minute")
+async def refresh(request: Request, current_user: CurrentUser):
+    """Renova o access token (sliding) enquanto a sessão estiver dentro do
+    teto absoluto. O CurrentUser já garante token válido e conta ativa."""
+    auth = request.headers.get("Authorization", "")
+    token_atual = auth.removeprefix("Bearer ").strip()
+    novo_token = auth_service.renovar_token(token_atual)
+    return TokenResponse(access_token=novo_token, usuario=current_user)
+
+
 @router.post(
     "/forgot-password",
     response_model=RecuperacaoSenhaResponse,
