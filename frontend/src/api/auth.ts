@@ -67,7 +67,9 @@ export type ValidarCodigoPayload = {
 
 export type RedefinirSenhaPayload = {
   email: string;
-  codigo: string;
+  // Token devolvido por /validate-reset-code — o código de 6 dígitos não
+  // transita mais após a validação.
+  token: string;
   nova_senha: string;
 };
 

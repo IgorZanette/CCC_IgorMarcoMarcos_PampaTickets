@@ -87,7 +87,8 @@ async def enviar_codigo_recuperacao_senha(email_destino: str, codigo: str, nome_
             server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
             server.send_message(msg)
 
-        logger.info(f"Email de recuperação de senha enviado para {email_destino}")
+        # Sem o endereço no log (PII) — o request_id do middleware já correlaciona.
+        logger.info("Email de recuperação de senha enviado")
         return True
 
     except smtplib.SMTPAuthenticationError:

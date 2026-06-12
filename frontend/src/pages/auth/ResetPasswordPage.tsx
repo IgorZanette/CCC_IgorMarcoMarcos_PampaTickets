@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { redefinirSenha } from "../../api/auth";
@@ -10,7 +10,7 @@ export const ResetPasswordPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email || "";
-  const codigo = location.state?.codigo || "";
+  const token = location.state?.token || "";
 
   const [novaSenha, setNovaSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
@@ -18,7 +18,15 @@ export const ResetPasswordPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  if (!email || !codigo) {
+  // Redireciona após o sucesso — com cleanup: se o usuário navegar antes,
+  // o timer é cancelado e não o arranca da página para onde foi.
+  useEffect(() => {
+    if (!success) return;
+    const timer = setTimeout(() => navigate("/login"), 3000);
+    return () => clearTimeout(timer);
+  }, [success, navigate]);
+
+  if (!email || !token) {
     navigate("/esqueci-senha");
     return null;
   }
@@ -44,12 +52,8 @@ export const ResetPasswordPage = () => {
 
     setLoading(true);
     try {
-      await redefinirSenha({ email, codigo, nova_senha: novaSenha });
+      await redefinirSenha({ email, token, nova_senha: novaSenha });
       setSuccess(true);
-      // Redirecionar após 3 segundos
-      setTimeout(() => {
-        navigate("/login");
-      }, 3000);
     } catch (err: unknown) {
       setError(
         extractErrorMessage(err, "Não foi possível redefinir a senha. Tente novamente."),

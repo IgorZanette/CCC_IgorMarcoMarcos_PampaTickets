@@ -79,10 +79,14 @@ class ValidarCodigoRecuperacaoRequest(BaseModel):
 
 
 class RedefinirSenhaRequest(BaseModel):
-    """Request para redefinir a senha."""
+    """Request para redefinir a senha.
+
+    Usa o token devolvido por /validate-reset-code — o código de 6 dígitos
+    não transita mais após a validação.
+    """
 
     email: EmailStr = Field(..., examples=["marco.antonio@santolin.com.br"])
-    codigo: str = Field(..., min_length=6, max_length=6, examples=["123456"])
+    token: str = Field(..., min_length=20, max_length=255)
     nova_senha: str = Field(..., min_length=8, max_length=72, examples=["NovaaSenha123"])
 
     @field_validator("nova_senha")
