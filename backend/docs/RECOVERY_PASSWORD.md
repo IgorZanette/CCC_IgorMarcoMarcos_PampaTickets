@@ -13,7 +13,8 @@ Implementação completa de fluxo de recuperação de senha com envio de código
 class RecuperacaoSenha(Base):
     - id: UUID (chave primária)
     - usuario_id: UUID (FK para usuarios.id)
-    - codigo: str (6 dígitos)
+    - codigo_hash: str (HMAC-SHA256 do código de 6 dígitos — nunca em claro)
+    - tentativas: int (erradas; código invalidado ao estourar o limite)
     - token: str (token seguro único)
     - status: Enum (PENDENTE, VALIDADO, UTILIZADO, EXPIRADO)
     - criado_em: DateTime
@@ -49,7 +50,7 @@ async def solicitar_recuperacao_senha(db, email)
 async def validar_codigo_recuperacao(db, email, codigo)
     # Valida código, marca como VALIDADO
 
-async def redefinir_senha(db, email, codigo, nova_senha)
+async def redefinir_senha(db, email, token, nova_senha)  # token da validação, não o código
     # Redefine a senha após validação
 ```
 
@@ -64,7 +65,7 @@ POST /api/auth/validate-reset-code
   → {token: "...", mensagem: "Validado..."}
 
 POST /api/auth/reset-password
-  {email: "...", codigo: "...", nova_senha: "..."}
+  {email: "...", token: "...", nova_senha: "..."}  # token devolvido por /validate-reset-code
   → {mensagem: "Senha redefinida..."}
 ```
 
@@ -126,9 +127,13 @@ redefinirSenha(payload)
 
 ### Cenários de Erro
 
-- **Email inválido/não existe**: Retorna 404 com mensagem genérica (segurança)
-- **Código expirado**: Token marcado como EXPIRADO, erro 400
-- **Código inválido**: Erro 400 com mensagem clara
+- **Email inválido/não existe**: solicitação responde **200 com a mesma
+  mensagem genérica** do caso de sucesso; validação/redefinição respondem o
+  mesmo 400 "Código inválido ou expirado." do código errado (anti-enumeração)
+- **Código expirado**: marcado como EXPIRADO, erro 400 genérico
+- **Código inválido**: erro 400 genérico; a tentativa conta para o lockout
+- **Muitas tentativas** (5 erradas): código invalidado — 400 "Muitas
+  tentativas incorretas. Solicite um novo código."
 - **Senhas não conferem**: Validação no frontend
 - **Senha fraca**: Validação (mínimo 8 chars, letras + números)
 
@@ -140,10 +145,15 @@ redefinirSenha(payload)
 
 ## Segurança
 
-✅ **Implementado:**
-- Emails não revelam se são válidos (proteção contra enumeration)
-- Códigos são aleatórios (6 dígitos)
-- Tokens são criptograficamente seguros
+✅ **Implementado (endurecido em 11/06/2026):**
+- Anti-enumeração de contas: resposta idêntica exista o e-mail ou não, e
+  envio do e-mail em background (latência do SMTP não denuncia o cadastro)
+- Anti-brute-force: 5 tentativas erradas invalidam o código (além do rate
+  limit por IP); novo pedido invalida códigos anteriores (um válido por vez)
+- Código armazenado como **HMAC-SHA256 com SECRET_KEY de pepper** (nunca em
+  claro) e comparado em tempo constante (`hmac.compare_digest`)
+- Códigos gerados com CSPRNG (`secrets`)
+- Tokens criptograficamente seguros
 - Senhas hashadas com bcrypt
 - Expiração automática de códigos
 - HTTPS obrigatório em produção
