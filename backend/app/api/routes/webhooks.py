@@ -1,7 +1,7 @@
 import hmac
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,6 +15,7 @@ router = APIRouter()
 @router.post("/webhooks/asaas", tags=["Webhooks"])
 async def asaas_webhook(
     request: Request,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, str]:
     """
@@ -39,8 +40,6 @@ async def asaas_webhook(
     except Exception:
         raise HTTPException(status_code=400, detail="JSON inválido")
 
-    logger.info("Webhook Asaas recebido: {}", data)
-
     # Validar estrutura básica do webhook
     if "event" not in data or "payment" not in data:
         raise HTTPException(status_code=400, detail="Estrutura de webhook inválida")
@@ -48,9 +47,20 @@ async def asaas_webhook(
     evento = data["event"]
     payment_id = data["payment"]["id"]
 
+    # Loga só evento + charge_id — o payload do Asaas traz dados do pagador
+    # (nome, CPF, e-mail) que não devem ir para os logs (PII/LGPD).
+    logger.info(
+        "Webhook Asaas recebido | evento={} payment_id={}", evento, payment_id
+    )
+
     # Processar o webhook
     try:
-        await processar_webhook(db, evento=evento, payment_id=payment_id)
+        await processar_webhook(
+            db,
+            evento=evento,
+            payment_id=payment_id,
+            background_tasks=background_tasks,
+        )
     except Exception:
         logger.exception(
             "Falha ao processar webhook Asaas | evento={} payment_id={}",

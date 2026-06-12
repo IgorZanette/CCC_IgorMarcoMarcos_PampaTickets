@@ -7,8 +7,10 @@
 
 ## Última atualização
 
-**Data:** 11/06/2026
-**Responsável:** Marcos Paulo (reembolso do participante + CI)
+**Data:** 12/06/2026
+**Responsável:** Marcos Paulo (UC15 WhatsApp — draft estrutural)
+
+> **UC15 — Notificações WhatsApp (12/06/2026, branch `feat/whatsapp-notificacoes`)** — draft estrutural, 3 gatilhos event-driven. Integração `app/integrations/whatsapp/` (client + exceptions) isola a Meta Cloud API e **degrada para no-op** sem credenciais (não envia, não quebra o fluxo), espelhando o Supabase. `whatsapp_service` é o único orquestrador: normaliza telefone E.164 (`core/phone.to_e164_br`), monta o template, agenda via `BackgroundTasks`, `_enviar` best-effort. Ganchos: **pagamento confirmado** (`processar_webhook`, só na transição efetiva — reentregas não renotificam), **check-in** (`validar_checkin`, após o certificado), **evento cancelado** (cascata, um por participante, só nos pedidos que ela de fato cancelou). Config `META_WHATSAPP_TOKEN`/`META_PHONE_NUMBER_ID`/`META_API_VERSION`/`FRONTEND_URL`. **137 testes** (Meta mockada). Revisão multi-agente: 10 achados confirmados → aplicados os que procediam (PII no log do whatsapp_service e do webhook Asaas; notificação espúria de cancelamento numa race; link do PDF nas mensagens via FRONTEND_URL; `db.get`→`pedido_repo.get_by_id`). **Pendente p/ produção** (supervisão humana): credenciais reais + templates aprovados no Meta Business Manager + teste E2E real; gatilho "véspera do evento" (precisa de scheduler). Risco aceito: cliente httpx fixa o token no singleton (rotação exige restart) — consistente com o Asaas. Detalhes em [WHATSAPP.md](WHATSAPP.md).
 
 ---
 
@@ -28,7 +30,7 @@
 - [x] UC13 — Geração de Certificado PDF
 - [x] UC14 — Relatório Financeiro PDF (download em PDF + resumo em JSON)
 - [x] **Recuperação de Senha** — Email com código de 6 dígitos (novo)
-- [ ] UC15 — Notificações WhatsApp
+- [~] UC15 — Notificações WhatsApp (draft estrutural: 3 gatilhos event-driven prontos e testados com a Meta mockada; falta credenciais reais + templates aprovados + gatilho "véspera")
 - [ ] UC08 — Galeria de Fotos (baixa prioridade)
 
 Endpoints extras (fora dos UCs originais):

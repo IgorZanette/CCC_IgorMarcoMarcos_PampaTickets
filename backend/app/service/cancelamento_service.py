@@ -1,4 +1,4 @@
-from fastapi import HTTPException, status
+from fastapi import BackgroundTasks, HTTPException, status
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,7 +14,9 @@ from app.repositories import (
     pagamento_repo,
     pedido_repo,
     reembolso_repo,
+    usuario_repo,
 )
+from app.service import whatsapp_service
 
 # Statuses de pagamento que SÓ são atribuídos por aplicar_cancelamento — sempre
 # no mesmo commit das compensações (estoque/cupom). Ver _ja_compensado abaixo.
@@ -77,7 +79,12 @@ async def aplicar_cancelamento(
     return await pedido_repo.update_status(db, pedido, StatusPedido.CANCELADO)
 
 
-async def cancelar_pedidos_do_evento(db: AsyncSession, evento_id) -> None:
+async def cancelar_pedidos_do_evento(
+    db: AsyncSession,
+    evento_id,
+    background_tasks: BackgroundTasks | None = None,
+    evento_nome: str | None = None,
+) -> None:
     """Cancela/estorna todos os pedidos não-terminais de um evento cancelado.
 
     PENDENTE -> cancelamento normal (devolve estoque, deleta a cobrança).
@@ -90,6 +97,12 @@ async def cancelar_pedidos_do_evento(db: AsyncSession, evento_id) -> None:
     cancelado: o organizador repete o cancelamento e a cascata retoma apenas
     os pedidos que faltaram, sem dupla devolução de estoque (ver os marcadores
     de compensação em aplicar_cancelamento/_estornar_pedido_pago).
+
+    UC15: notifica cada participante de pedido efetivamente cancelado, em
+    background. Se a cascata falhar (502), o endpoint levanta antes de a
+    resposta sair e as notificações agendadas não chegam a ser enviadas — o
+    evento também não foi cancelado, então é coerente; no retry bem-sucedido
+    os pedidos restantes são notificados.
     """
     pedidos = await pedido_repo.list_by_evento(
         db, evento_id, status_in=[StatusPedido.PENDENTE, StatusPedido.PAGO]
@@ -104,15 +117,27 @@ async def cancelar_pedidos_do_evento(db: AsyncSession, evento_id) -> None:
         pedido = await pedido_repo.get_by_id_com_itens(db, pedido_id)
         if pedido is None:
             continue
+        participante_id = pedido.participante_id
         try:
+            # Só notifica se ESTE caminho de fato cancelou o pedido. A race com
+            # um webhook (PENDENTE→CANCELADO, PAGO→REEMBOLSADO) pode trazer o
+            # pedido recarregado num status que pula os dois ramos — aí não há
+            # cancelamento a anunciar, e notificar seria um aviso enganoso.
+            foi_cancelado = False
             if pedido.status == StatusPedido.PENDENTE:
                 await aplicar_cancelamento(
                     db,
                     pedido=pedido,
                     motivo_status_pagamento=StatusPagamento.CANCELADO,
                 )
+                foi_cancelado = True
             elif pedido.status == StatusPedido.PAGO:
                 await _estornar_pedido_pago(db, pedido)
+                foi_cancelado = True
+            if foi_cancelado:
+                await _notificar_cancelamento(
+                    db, background_tasks, participante_id, evento_nome
+                )
         except Exception:
             falhas += 1
             logger.exception(
@@ -130,6 +155,31 @@ async def cancelar_pedidos_do_evento(db: AsyncSession, evento_id) -> None:
                 "O evento não foi cancelado — tente novamente para concluir."
             ),
         )
+
+
+async def _notificar_cancelamento(
+    db: AsyncSession,
+    background_tasks: BackgroundTasks | None,
+    participante_id,
+    evento_nome: str | None,
+) -> None:
+    """Agenda a notificação de evento cancelado (UC15). À prova de falhas: o
+    cancelamento já está commitado neste ponto, então qualquer erro aqui é
+    logado e NUNCA conta como falha da cascata nem dispara rollback."""
+    if background_tasks is None or evento_nome is None:
+        return
+    try:
+        participante = await usuario_repo.get_by_id(db, participante_id)
+        if participante is None:
+            return
+        whatsapp_service.notificar_evento_cancelado(
+            background_tasks,
+            nome=participante.nome,
+            telefone=participante.celular,
+            evento_nome=evento_nome,
+        )
+    except Exception:
+        logger.exception("Falha ao agendar notificação de cancelamento de evento")
 
 
 async def _estornar_pedido_pago(db: AsyncSession, pedido: Pedido) -> None:

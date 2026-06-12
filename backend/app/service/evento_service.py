@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import HTTPException, status
+from fastapi import BackgroundTasks, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.evento import Evento, StatusEvento
@@ -110,7 +110,10 @@ async def encerrar(
 
 
 async def cancelar(
-    db: AsyncSession, organizador: Usuario, evento_id: uuid.UUID
+    db: AsyncSession,
+    organizador: Usuario,
+    evento_id: uuid.UUID,
+    background_tasks: BackgroundTasks | None = None,
 ) -> Evento:
     evento = await _obter_proprio(db, organizador, evento_id)
     if evento.status not in _STATUS_CANCELAVEIS:
@@ -119,7 +122,9 @@ async def cancelar(
             detail="Evento não pode ser cancelado neste status.",
         )
     # Cascata: cancela pendentes e estorna pagos antes de marcar o evento.
-    await cancelamento_service.cancelar_pedidos_do_evento(db, evento.id)
+    await cancelamento_service.cancelar_pedidos_do_evento(
+        db, evento.id, background_tasks=background_tasks, evento_nome=evento.nome
+    )
     return await evento_repo.update_status(db, evento, StatusEvento.CANCELADO)
 
 

@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from fastapi import HTTPException, status
+from fastapi import BackgroundTasks, HTTPException, status
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,12 +10,14 @@ from app.models.ingresso import StatusIngresso
 from app.models.pagamento import MetodoPagamento, Pagamento, Reembolso, StatusPagamento
 from app.models.pedido import Pedido, StatusPedido
 from app.repositories import (
+    evento_repo,
     ingresso_repo,
     pagamento_repo,
     pedido_repo,
     reembolso_repo,
+    usuario_repo,
 )
-from app.service import cancelamento_service, ingresso_service
+from app.service import cancelamento_service, ingresso_service, whatsapp_service
 from app.service.ingresso_service import gerar_pdf_ingresso_upload
 
 
@@ -110,7 +112,13 @@ async def solicitar_reembolso(
     )
 
 
-async def processar_webhook(db: AsyncSession, *, evento: str, payment_id: str) -> None:
+async def processar_webhook(
+    db: AsyncSession,
+    *,
+    evento: str,
+    payment_id: str,
+    background_tasks: BackgroundTasks | None = None,
+) -> None:
     """
     Processa eventos recebidos do Asaas e atualiza o banco.
     Deve ser chamado pelo webhook_service após validar o token.
@@ -138,6 +146,12 @@ async def processar_webhook(db: AsyncSession, *, evento: str, payment_id: str) -
                 pago_em=datetime.now(timezone.utc),
             )
             await _atualizar_status_pedido(db, pagamento.pedido_id, StatusPedido.PAGO)
+
+            # UC15: notifica só na transição efetiva para PAGO — reentregas do
+            # webhook (bloco idempotente abaixo) não disparam de novo.
+            await _notificar_pagamento_confirmado(
+                db, background_tasks, pagamento.pedido_id
+            )
 
         # Idempotente e auto-recuperável: garante a emissão dos ingressos mesmo que
         # uma entrega anterior tenha falhado após marcar o pagamento como aprovado.
@@ -202,6 +216,27 @@ async def _atualizar_status_pedido(
     if result is not None:
         result.status = novo_status
         await db.commit()
+
+
+async def _notificar_pagamento_confirmado(
+    db: AsyncSession,
+    background_tasks: BackgroundTasks | None,
+    pedido_id,
+) -> None:
+    """Reúne participante + evento do pedido e agenda a notificação (UC15)."""
+    pedido = await pedido_repo.get_by_id(db, pedido_id)
+    if pedido is None:
+        return
+    participante = await usuario_repo.get_by_id(db, pedido.participante_id)
+    evento = await evento_repo.get_by_id(db, pedido.evento_id)
+    if participante is None or evento is None:
+        return
+    whatsapp_service.notificar_pagamento_confirmado(
+        background_tasks,
+        nome=participante.nome,
+        telefone=participante.celular,
+        evento_nome=evento.nome,
+    )
 
 
 async def _gerar_pdfs_ingressos(db: AsyncSession, pedido_id: str) -> None:
