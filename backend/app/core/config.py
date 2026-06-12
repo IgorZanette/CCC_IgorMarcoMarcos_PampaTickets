@@ -36,6 +36,17 @@ class Settings(BaseSettings):
     EMAIL_FROM_NAME: str = "PampaTickets"
     PASSWORD_RESET_EXPIRE_MINUTES: int = 15
 
+    # Meta Cloud API — WhatsApp Business (UC15)
+    # Sem token/phone_number_id, a integração degrada para no-op (não envia,
+    # não quebra o fluxo). Os nomes de template precisam estar aprovados no
+    # Meta Business Manager para envio fora da janela de 24h.
+    META_WHATSAPP_TOKEN: str | None = None
+    META_PHONE_NUMBER_ID: str | None = None
+    META_API_VERSION: str = "v21.0"
+
+    # Base do frontend, usada para montar links nas notificações.
+    FRONTEND_URL: str = "http://localhost:5173"
+
     model_config = SettingsConfigDict(
         env_file="../.env", env_file_encoding="utf-8", extra="ignore"
     )

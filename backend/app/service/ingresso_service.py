@@ -2,7 +2,7 @@ import secrets
 import uuid
 from typing import Optional
 
-from fastapi import HTTPException, status
+from fastapi import BackgroundTasks, HTTPException, status
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,6 +12,7 @@ from app.models.ingresso import Ingresso, StatusIngresso
 from app.models.usuario import Usuario
 from app.reports.ingresso_pdf import gerar_pdf_certificado, gerar_pdf_ingresso
 from app.repositories import certificado_repo, checkin_repo, ingresso_repo, pedido_repo
+from app.service import whatsapp_service
 
 
 async def gerar_pdf_ingresso_upload(
@@ -122,7 +123,11 @@ async def gerar_pdf_certificado_upload(
 
 
 async def validar_checkin(
-    db: AsyncSession, *, qr_code_hash: str, usuario: Usuario
+    db: AsyncSession,
+    *,
+    qr_code_hash: str,
+    usuario: Usuario,
+    background_tasks: BackgroundTasks | None = None,
 ) -> dict:
     """
     Valida um ingresso via QR Code hash, persiste o Checkin e marca como utilizado.
@@ -161,6 +166,14 @@ async def validar_checkin(
     await ingresso_repo.update_status(db, ingresso.id, StatusIngresso.UTILIZADO)
 
     certificado_url = await gerar_pdf_certificado_upload(db, str(ingresso.id))
+
+    # UC15: notifica o participante (best-effort, em background).
+    whatsapp_service.notificar_checkin(
+        background_tasks,
+        nome=ingresso.participante.nome,
+        telefone=ingresso.participante.celular,
+        evento_nome=ingresso.lote.evento.nome,
+    )
 
     return {
         "checkin_id": checkin.id,

@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, BackgroundTasks, Query, status
 
 from app.api.deps import DbDep, OrganizadorUser
 from app.schemas.evento import EventoCreate, EventoResponse, EventoUpdate
@@ -73,6 +73,11 @@ async def encerrar_evento(
 
 @router.patch("/eventos/{evento_id}/cancelar", response_model=EventoResponse)
 async def cancelar_evento(
-    evento_id: uuid.UUID, db: DbDep, organizador: OrganizadorUser
+    evento_id: uuid.UUID,
+    db: DbDep,
+    organizador: OrganizadorUser,
+    background_tasks: BackgroundTasks,
 ):
-    return await evento_service.cancelar(db, organizador, evento_id)
+    return await evento_service.cancelar(
+        db, organizador, evento_id, background_tasks=background_tasks
+    )
