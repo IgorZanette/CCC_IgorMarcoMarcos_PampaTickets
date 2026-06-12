@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, String, func
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -22,7 +22,10 @@ class RecuperacaoSenha(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     usuario_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("usuarios.id"), nullable=False)
-    codigo: Mapped[str] = mapped_column(String(6), nullable=False)
+    # HMAC-SHA256 (hex) do código de 6 dígitos — nunca o código em claro.
+    codigo_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    # Tentativas erradas de validação — o código é invalidado ao estourar o limite.
+    tentativas: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     token: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     status: Mapped[StatusRecuperacao] = mapped_column(
         Enum(StatusRecuperacao), default=StatusRecuperacao.PENDENTE, nullable=False

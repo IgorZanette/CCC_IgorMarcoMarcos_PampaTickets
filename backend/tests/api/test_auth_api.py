@@ -181,6 +181,17 @@ class TestRefresh:
         assert resp.status_code == 401
 
 
+class TestRecuperacaoSenha:
+    async def test_forgot_password_email_inexistente_200_generico(self, client):
+        # Anti-enumeração: mesmo status/mensagem do caso de e-mail cadastrado
+        # (antes respondia 404 "Email não encontrado").
+        resp = await client.post(
+            "/api/auth/forgot-password", json={"email": "ninguem@test.com"}
+        )
+        assert resp.status_code == 200
+        assert "Se o e-mail estiver cadastrado" in resp.json()["mensagem"]
+
+
 class TestRateLimit:
     async def test_login_excede_limite_429(self, client):
         from app.core.rate_limit import limiter

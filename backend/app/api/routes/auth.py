@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, BackgroundTasks, Request, status
 
 from app.api.deps import CurrentUser, DbDep
 from app.core.rate_limit import limiter
@@ -57,14 +57,17 @@ async def refresh(request: Request, current_user: CurrentUser):
 )
 @limiter.limit("5/minute")
 async def solicitar_recuperacao_senha(
-    request: Request, data: RecuperacaoSenhaRequest, db: DbDep
+    request: Request,
+    data: RecuperacaoSenhaRequest,
+    db: DbDep,
+    background_tasks: BackgroundTasks,
 ):
     """
-    Solicita código de recuperação de senha para o email informado.
-    O código será enviado por email.
+    Solicita código de recuperação de senha. Resposta idêntica exista a conta
+    ou não (anti-enumeração); o e-mail é enviado em background.
     """
     resultado = await recuperacao_senha_service.solicitar_recuperacao_senha(
-        db, data.email
+        db, data.email, background_tasks
     )
     return resultado
 
@@ -98,10 +101,10 @@ async def redefinir_senha(
     request: Request, data: RedefinirSenhaRequest, db: DbDep
 ):
     """
-    Redefine a senha do usuário após validação do código.
+    Redefine a senha usando o token devolvido pela validação do código.
     """
     resultado = await recuperacao_senha_service.redefinir_senha(
-        db, data.email, data.codigo, data.nova_senha
+        db, data.email, data.token, data.nova_senha
     )
     return resultado
 

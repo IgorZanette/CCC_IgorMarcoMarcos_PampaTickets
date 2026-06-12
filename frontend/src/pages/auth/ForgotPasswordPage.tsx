@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { solicitarRecuperacaoSenha } from "../../api/auth";
@@ -13,6 +13,17 @@ export const ForgotPasswordPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  // Redireciona após o sucesso — com cleanup: se o usuário navegar antes,
+  // o timer é cancelado e não dispara uma navegação espúria.
+  useEffect(() => {
+    if (!success) return;
+    const timer = setTimeout(
+      () => navigate("/validar-codigo", { state: { email } }),
+      2000,
+    );
+    return () => clearTimeout(timer);
+  }, [success, email, navigate]);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -20,10 +31,6 @@ export const ForgotPasswordPage = () => {
     try {
       await solicitarRecuperacaoSenha({ email });
       setSuccess(true);
-      // Redirecionar após 2 segundos
-      setTimeout(() => {
-        navigate("/validar-codigo", { state: { email } });
-      }, 2000);
     } catch (err: unknown) {
       setError(
         extractErrorMessage(
@@ -39,8 +46,8 @@ export const ForgotPasswordPage = () => {
   if (success) {
     return (
       <AuthShell
-        title="Código Enviado"
-        subtitle="Verifique seu email para o código de 6 dígitos."
+        title="Verifique seu e-mail"
+        subtitle="Se o e-mail estiver cadastrado, você receberá um código de 6 dígitos."
         footer={
           <>
             <p style={{ textAlign: "center", color: "var(--pt-text-dim)", fontSize: 14 }}>
@@ -51,7 +58,7 @@ export const ForgotPasswordPage = () => {
       >
         <div style={{ textAlign: "center", padding: "20px 0" }}>
           <p style={{ color: "var(--pt-success)", fontSize: 14, fontWeight: 600 }}>
-            ✓ Email enviado com sucesso para {email}
+            ✓ Solicitação registrada para {email}
           </p>
         </div>
       </AuthShell>

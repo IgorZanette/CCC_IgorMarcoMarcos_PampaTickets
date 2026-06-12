@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { validarCodigoRecuperacao } from "../../api/auth";
 import { extractErrorMessage } from "../../lib/errors";
@@ -25,8 +25,10 @@ export const ValidateCodePage = () => {
     setError(null);
     setLoading(true);
     try {
-      await validarCodigoRecuperacao({ email, codigo });
-      navigate("/redefinir-senha", { state: { email, codigo } });
+      const { token } = await validarCodigoRecuperacao({ email, codigo });
+      // Daqui em diante quem autoriza o reset é o token — o código de 6
+      // dígitos não transita mais (nem fica no history state do navegador).
+      navigate("/redefinir-senha", { state: { email, token } });
     } catch (err: unknown) {
       setError(extractErrorMessage(err, "Código inválido ou expirado."));
     } finally {
@@ -42,6 +44,15 @@ export const ValidateCodePage = () => {
         <>
           <p style={{ textAlign: "center", color: "var(--pt-text-dim)", fontSize: 13 }}>
             Email: <strong>{email}</strong>
+          </p>
+          <p style={{ textAlign: "center", fontSize: 13 }}>
+            Não recebeu ou o código foi bloqueado?{" "}
+            <Link
+              to="/esqueci-senha"
+              style={{ color: "var(--pt-accent)", fontWeight: 600 }}
+            >
+              Solicitar novo código
+            </Link>
           </p>
         </>
       }
