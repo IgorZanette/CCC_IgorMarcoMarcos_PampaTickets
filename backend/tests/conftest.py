@@ -38,6 +38,9 @@ os.environ.setdefault("ACCESS_TOKEN_EXPIRE_MINUTES", "60")
 os.environ.setdefault("ASAAS_API_KEY", "test-asaas-key")
 os.environ.setdefault("ASAAS_BASE_URL_UAT", "https://sandbox.asaas.test/api/v3")
 os.environ.setdefault("ASAAS_WEBHOOK_TOKEN", "test-webhook-token")
+# SMTP_PASSWORD é o único campo de e-mail sem default em Settings — localmente
+# o backend/.env supre, mas no CI não existe .env (a suíte é autossuficiente).
+os.environ.setdefault("SMTP_PASSWORD", "test-smtp-password")
 
 from app.db.base import Base  # noqa: E402
 from app.db.session import get_db  # noqa: E402

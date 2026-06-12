@@ -245,3 +245,109 @@
 .ghost:hover {
   color: var(--pt-text);
 }
+
+.refund {
+  background: transparent;
+  border: 1px solid var(--pt-border);
+  color: var(--pt-danger);
+  padding: 8px 14px;
+  border-radius: var(--pt-r-md);
+  font-size: 12px;
+  font-weight: 600;
+  transition: border-color var(--pt-t-fast);
+}
+
+.refund:hover {
+  border-color: var(--pt-danger);
+}
+
+.refundPending {
+  color: var(--pt-text-dim);
+  font-size: 11px;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+}
+
+.modal {
+  background: var(--pt-bg-card);
+  border: 1px solid var(--pt-border);
+  border-radius: var(--pt-r-xl);
+  padding: 24px;
+  width: 100%;
+  max-width: 440px;
+}
+
+.modalTitle {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0 0 10px;
+  letter-spacing: -0.015em;
+}
+
+.modalText {
+  font-size: 13px;
+  color: var(--pt-text-dim);
+  line-height: 1.5;
+  margin: 0 0 16px;
+}
+
+.modalLabel {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--pt-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+.modalTextarea {
+  width: 100%;
+  min-height: 84px;
+  background: var(--pt-bg);
+  border: 1px solid var(--pt-border);
+  border-radius: var(--pt-r-md);
+  color: var(--pt-text);
+  padding: 10px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.modalErro {
+  color: var(--pt-danger);
+  font-size: 12px;
+  margin-top: 10px;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.modalConfirm {
+  background: var(--pt-danger);
+  color: #fff;
+  border: none;
+  padding: 10px 14px;
+  border-radius: var(--pt-r-md);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.modalConfirm:disabled {
+  opacity: 0.6;
+}

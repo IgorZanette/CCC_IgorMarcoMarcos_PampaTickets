@@ -1,5 +1,10 @@
-"""Testes de API dos endpoints de autenticação (cadastro, login, me)."""
+"""Testes de API dos endpoints de autenticação (cadastro, login, me, refresh)."""
 
+from datetime import datetime, timedelta, timezone
+
+import jwt
+
+from app.core.config import settings
 from app.integrations.asaas.exceptions import AsaasAPIError
 from app.service import auth_service
 
@@ -101,6 +106,77 @@ class TestMe:
         token = auth_service._gerar_token("nao-e-uuid")
         resp = await client.get(
             "/api/auth/me", headers={"Authorization": f"Bearer {token}"}
+        )
+        assert resp.status_code == 401
+
+
+class TestRefresh:
+    async def test_refresh_ok_renova_e_preserva_auth_time(
+        self, client, participante, auth_headers
+    ):
+        headers = auth_headers(participante)
+        resp = await client.post("/api/auth/refresh", headers=headers)
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["usuario"]["email"] == participante.email
+
+        novo_token = body["access_token"]
+        me = await client.get(
+            "/api/auth/me", headers={"Authorization": f"Bearer {novo_token}"}
+        )
+        assert me.status_code == 200
+
+        # auth_time é preservado (teto absoluto conta desde o login original).
+        original = jwt.decode(
+            headers["Authorization"].removeprefix("Bearer "),
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
+        )
+        renovado = jwt.decode(
+            novo_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
+        assert renovado["auth_time"] == original["auth_time"]
+        assert renovado["exp"] >= original["exp"]
+
+    async def test_refresh_sem_token_401(self, client):
+        resp = await client.post("/api/auth/refresh")
+        assert resp.status_code == 401
+
+    async def test_refresh_sessao_alem_do_teto_401(self, client, participante):
+        # Token ainda válido (exp futuro), mas a sessão começou antes do teto.
+        agora = datetime.now(timezone.utc)
+        auth_time_antigo = int(
+            (agora - timedelta(hours=settings.SESSION_MAX_HOURS + 1)).timestamp()
+        )
+        token = jwt.encode(
+            {
+                "sub": str(participante.id),
+                "exp": agora + timedelta(minutes=30),
+                "iat": agora,
+                "auth_time": auth_time_antigo,
+            },
+            settings.SECRET_KEY,
+            algorithm=settings.ALGORITHM,
+        )
+        resp = await client.post(
+            "/api/auth/refresh", headers={"Authorization": f"Bearer {token}"}
+        )
+        assert resp.status_code == 401
+        assert "Sessão expirada" in resp.json()["detail"]
+
+    async def test_refresh_token_legado_sem_auth_time_401(self, client, participante):
+        # Tokens emitidos antes do refresh existir (sem iat/auth_time) não são
+        # renováveis — o usuário faz login de novo uma única vez.
+        token = jwt.encode(
+            {
+                "sub": str(participante.id),
+                "exp": datetime.now(timezone.utc) + timedelta(minutes=30),
+            },
+            settings.SECRET_KEY,
+            algorithm=settings.ALGORITHM,
+        )
+        resp = await client.post(
+            "/api/auth/refresh", headers={"Authorization": f"Bearer {token}"}
         )
         assert resp.status_code == 401
 

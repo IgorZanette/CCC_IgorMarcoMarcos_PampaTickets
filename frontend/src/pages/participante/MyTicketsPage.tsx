@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { logout } from "../../api/auth";
@@ -6,6 +6,7 @@ import {
   listarMeusIngressos,
   type Ingresso,
 } from "../../api/ingressos";
+import { reembolsarPedido } from "../../api/pedidos";
 import { StatusPill } from "../../components/StatusPill";
 import { initials, useCurrentUser } from "../../lib/auth-store";
 import { extractErrorMessage } from "../../lib/errors";
@@ -19,6 +20,13 @@ export const MyTicketsPage = () => {
   const [ingressos, setIngressos] = useState<Ingresso[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("proximos");
+  // Ingresso cujo pedido está com o modal de reembolso aberto.
+  const [reembolsoAlvo, setReembolsoAlvo] = useState<Ingresso | null>(null);
+  // Pedidos com reembolso já solicitado nesta sessão — o status real do ingresso
+  // só muda quando o webhook do Asaas confirmar o estorno (UC10/UC11).
+  const [pedidosReembolsados, setPedidosReembolsados] = useState<Set<string>>(
+    () => new Set(),
+  );
   const user = useCurrentUser();
   const navigate = useNavigate();
 
@@ -145,14 +153,51 @@ export const MyTicketsPage = () => {
             ?
           </div>
         ) : (
-          list.map((ing) => <IngressoRow key={ing.id} ing={ing} />)
+          list.map((ing) => (
+            <IngressoRow
+              key={ing.id}
+              ing={ing}
+              reembolsoSolicitado={
+                ing.reembolso_solicitado ||
+                (ing.pedido_id !== null &&
+                  pedidosReembolsados.has(ing.pedido_id))
+              }
+              onReembolso={
+                tab === "proximos" &&
+                ing.pedido_id !== null &&
+                !ing.reembolso_solicitado &&
+                !pedidosReembolsados.has(ing.pedido_id)
+                  ? () => setReembolsoAlvo(ing)
+                  : undefined
+              }
+            />
+          ))
         )}
       </div>
+
+      {reembolsoAlvo && (
+        <ReembolsoModal
+          ing={reembolsoAlvo}
+          onClose={() => setReembolsoAlvo(null)}
+          onSuccess={(pedidoId) => {
+            setPedidosReembolsados((prev) => new Set(prev).add(pedidoId));
+            setReembolsoAlvo(null);
+          }}
+        />
+      )}
     </div>
   );
 };
 
-const IngressoRow = ({ ing }: { ing: Ingresso }) => {
+const IngressoRow = ({
+  ing,
+  onReembolso,
+  reembolsoSolicitado,
+}: {
+  ing: Ingresso;
+  onReembolso?: () => void;
+  reembolsoSolicitado: boolean;
+}) => {
   const d = dateFull(ing.evento_data_inicio);
   const utilizado = ing.status === "UTILIZADO";
   const cancelado = ing.status === "CANCELADO";
@@ -197,6 +242,141 @@ const IngressoRow = ({ ing }: { ing: Ingresso }) => {
         ) : (
           <span className={styles.ghost}>PDF em geração…</span>
         )}
+        {reembolsoSolicitado ? (
+          <span className={styles.refundPending}>
+            ↩ Reembolso solicitado · aguardando confirmação
+          </span>
+        ) : (
+          onReembolso && (
+            <button type="button" className={styles.refund} onClick={onReembolso}>
+              Solicitar reembolso
+            </button>
+          )
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Modal de confirmação do reembolso (UC10). O reembolso é por pedido: cancela
+// todos os ingressos da mesma compra e estorna pelo meio de pagamento original.
+const ReembolsoModal = ({
+  ing,
+  onClose,
+  onSuccess,
+}: {
+  ing: Ingresso;
+  onClose: () => void;
+  onSuccess: (pedidoId: string) => void;
+}) => {
+  const [motivo, setMotivo] = useState("");
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      // Não fecha durante o envio: desmontar o modal com a requisição em voo
+      // engoliria um eventual erro sem nenhum aviso ao usuário.
+      if (e.key === "Escape") {
+        if (!enviando) onClose();
+        return;
+      }
+      // Focus trap: mantém o Tab circulando dentro do dialog.
+      if (e.key !== "Tab" || !dialogRef.current) return;
+      const focusables = dialogRef.current.querySelectorAll<HTMLElement>(
+        "button:not([disabled]), textarea:not([disabled])",
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement;
+      const dentro = dialogRef.current.contains(active);
+      if (e.shiftKey && (active === first || !dentro)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (active === last || !dentro)) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onClose, enviando]);
+
+  const confirmar = async () => {
+    if (!ing.pedido_id || enviando) return;
+    setEnviando(true);
+    setErro(null);
+    try {
+      await reembolsarPedido(ing.pedido_id, { motivo: motivo.trim() || null });
+      onSuccess(ing.pedido_id);
+    } catch (err) {
+      setErro(
+        extractErrorMessage(err, "Não foi possível solicitar o reembolso."),
+      );
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  return (
+    <div
+      className={styles.modalOverlay}
+      role="presentation"
+      onClick={() => {
+        if (!enviando) onClose();
+      }}
+    >
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="reembolso-titulo"
+        className={styles.modal}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 id="reembolso-titulo" className={styles.modalTitle}>
+          Solicitar reembolso
+        </h2>
+        <p className={styles.modalText}>
+          O reembolso vale para o <strong>pedido inteiro</strong>: todos os
+          ingressos comprados juntos para <strong>{ing.evento_nome}</strong>{" "}
+          serão cancelados e o valor devolvido pelo mesmo meio de pagamento.
+          Essa ação não pode ser desfeita.
+        </p>
+        <label className={styles.modalLabel} htmlFor="reembolso-motivo">
+          Motivo (opcional)
+        </label>
+        <textarea
+          id="reembolso-motivo"
+          className={styles.modalTextarea}
+          value={motivo}
+          onChange={(e) => setMotivo(e.target.value)}
+          maxLength={500}
+          placeholder="Conte para o organizador por que está pedindo o reembolso"
+          disabled={enviando}
+          autoFocus
+        />
+        {erro && <div className={styles.modalErro}>⚠ {erro}</div>}
+        <div className={styles.modalActions}>
+          <button
+            type="button"
+            className={styles.secondary}
+            onClick={onClose}
+            disabled={enviando}
+          >
+            Voltar
+          </button>
+          <button
+            type="button"
+            className={styles.modalConfirm}
+            onClick={confirmar}
+            disabled={enviando}
+          >
+            {enviando ? "Enviando…" : "Confirmar reembolso"}
+          </button>
+        </div>
       </div>
     </div>
   );

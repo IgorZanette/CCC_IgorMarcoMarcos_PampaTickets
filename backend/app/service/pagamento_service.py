@@ -5,6 +5,7 @@ from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.integrations.asaas import charges as asaas_charges
+from app.integrations.asaas.exceptions import AsaasAPIError
 from app.models.ingresso import StatusIngresso
 from app.models.pagamento import MetodoPagamento, Pagamento, Reembolso, StatusPagamento
 from app.models.pedido import Pedido, StatusPedido
@@ -84,7 +85,22 @@ async def solicitar_reembolso(
             detail="Pagamento sem cobrança no gateway.",
         )
 
-    await asaas_charges.refund_charge(charge_id=pagamento.charge_id)
+    try:
+        await asaas_charges.refund_charge(charge_id=pagamento.charge_id)
+    except AsaasAPIError as exc:
+        # 4xx: o gateway recusou o estorno por regra de negócio (ex.: cobrança
+        # recebida "em dinheiro" não é estornável) — devolve a mensagem
+        # acionável em vez de 500. 5xx: indisponibilidade do gateway.
+        # Nada é registrado no banco: sem estorno no gateway, não há Reembolso.
+        if exc.is_client_error:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=exc.user_message,
+            )
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Gateway de pagamento indisponível. Tente novamente em instantes.",
+        )
 
     return await reembolso_repo.create(
         db,

@@ -51,7 +51,7 @@ export type PedidoCriado = {
 };
 
 export type ReembolsoCreate = {
-  motivo: string;
+  motivo: string | null;
 };
 
 export type Reembolso = {

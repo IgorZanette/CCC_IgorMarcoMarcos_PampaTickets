@@ -22,12 +22,57 @@ def _verificar_senha(senha: str, senha_hash: str) -> bool:
     return bcrypt.checkpw(senha[:72].encode(), senha_hash.encode())
 
 
-def _gerar_token(usuario_id: str) -> str:
-    expiracao = datetime.now(timezone.utc) + timedelta(
-        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
-    )
-    payload = {"sub": usuario_id, "exp": expiracao}
+def _gerar_token(usuario_id: str, auth_time: int | None = None) -> str:
+    agora = datetime.now(timezone.utc)
+    expiracao = agora + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    payload = {
+        "sub": usuario_id,
+        "exp": expiracao,
+        "iat": agora,
+        # Momento do login original (epoch). Preservado pelas renovações para
+        # impor o teto absoluto de sessão (SESSION_MAX_HOURS).
+        "auth_time": auth_time if auth_time is not None else int(agora.timestamp()),
+    }
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+
+def renovar_token(token_atual: str) -> str:
+    """Renovação deslizante do access token, preservando o `auth_time`.
+
+    Exige um token atual ainda VÁLIDO e a sessão dentro do teto absoluto
+    (SESSION_MAX_HOURS desde o login original) — sem refresh token separado.
+
+    Decisão de proporcionalidade (11/06/2026): com o access token guardado em
+    localStorage no frontend, um refresh token rotativo no mesmo storage não
+    mudaria o perfil real de ameaça (um XSS captura ambos) e custaria tabela,
+    rotação e revogação. O teto absoluto limita o deslizamento de um token
+    roubado. Endurecimento futuro, se o projeto sair do escopo acadêmico:
+    refresh token rotativo em cookie httpOnly + denylist.
+    """
+    credencial_invalida = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Token inválido ou expirado.",
+    )
+    try:
+        payload = jwt.decode(
+            token_atual, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
+    except jwt.PyJWTError:
+        raise credencial_invalida
+
+    # Tokens antigos (sem auth_time/iat) não são renováveis — força novo login.
+    auth_time = int(payload.get("auth_time") or payload.get("iat") or 0)
+    if auth_time <= 0 or not payload.get("sub"):
+        raise credencial_invalida
+
+    idade_sessao = datetime.now(timezone.utc).timestamp() - auth_time
+    if idade_sessao > settings.SESSION_MAX_HOURS * 3600:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Sessão expirada. Faça login novamente.",
+        )
+
+    return _gerar_token(payload["sub"], auth_time=auth_time)
 
 
 async def cadastrar(db: AsyncSession, data: CadastroRequest) -> Usuario:

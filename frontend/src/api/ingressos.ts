@@ -15,6 +15,10 @@ export type Ingresso = {
   evento_data_inicio: string;
   evento_local: string;
   lote_nome: string;
+  // Nulo para cortesias — ingresso sem pedido não tem reembolso (UC10).
+  pedido_id: string | null;
+  // Reembolso já solicitado, aguardando o webhook do Asaas confirmar o estorno.
+  reembolso_solicitado: boolean;
 };
 
 // Visão do organizador: ingressos vendidos de um evento, com dados do participante.

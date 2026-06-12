@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    # Teto absoluto de sessão: o /auth/refresh desliza a expiração do access
+    # token, mas nunca além deste limite desde o login (claim auth_time).
+    SESSION_MAX_HOURS: int = 12
 
     # Supabase Storage
     SUPABASE_URL: str | None = None

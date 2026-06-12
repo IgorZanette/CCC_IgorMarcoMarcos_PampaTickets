@@ -8,6 +8,7 @@ from app.models.cupom import TipoDesconto
 from app.models.evento import StatusEvento
 from app.models.pagamento import MetodoPagamento
 from app.models.pedido import StatusPedido
+from app.repositories import reembolso_repo
 from app.schemas.pedido import PedidoCreate, PedidoItemCreate
 from app.service import pedido_service
 
@@ -229,3 +230,79 @@ async def test_reembolsar_pedido_pendente_409(
             db_session, participante_pagante, resultado["pedido"].id, motivo=None
         )
     assert exc.value.status_code == 409
+
+
+async def test_reembolsar_pedido_pago_registra_solicitacao(
+    db_session,
+    participante_pagante,
+    organizador,
+    criar_evento,
+    criar_lote,
+    mock_asaas_charges,
+):
+    evento = await criar_evento(organizador, status=StatusEvento.PUBLICADO)
+    lote = await criar_lote(evento, preco=100.0, quantidade_total=10)
+    resultado = await pedido_service.criar(
+        db_session, participante_pagante, _data(evento, lote)
+    )
+    pedido = resultado["pedido"]
+    pedido.status = StatusPedido.PAGO
+    await db_session.commit()
+
+    reembolso = await pedido_service.reembolsar(
+        db_session, participante_pagante, pedido.id, motivo="Imprevisto"
+    )
+    assert reembolso.motivo == "Imprevisto"
+    mock_asaas_charges.refund_charge.assert_awaited_once()
+
+    # Helper usado por /ingressos/meus para marcar "reembolso solicitado"
+    # enquanto o webhook do Asaas ainda não confirmou o estorno.
+    assert await reembolso_repo.pedido_ids_com_reembolso(
+        db_session, [pedido.id]
+    ) == {pedido.id}
+    assert await reembolso_repo.pedido_ids_com_reembolso(db_session, []) == set()
+
+    # Segunda solicitação para o mesmo pedido é recusada.
+    with pytest.raises(HTTPException) as exc:
+        await pedido_service.reembolsar(
+            db_session, participante_pagante, pedido.id, motivo=None
+        )
+    assert exc.value.status_code == 409
+
+
+async def test_reembolsar_recusado_pelo_gateway_422(
+    db_session,
+    participante_pagante,
+    organizador,
+    criar_evento,
+    criar_lote,
+    mock_asaas_charges,
+):
+    """Achado do E2E contra o sandbox: o Asaas recusa estornos por regra de
+    negócio (ex.: cobrança recebida 'em dinheiro') com 400 — isso deve virar
+    422 com a mensagem do gateway, não 500, e nada deve ser registrado."""
+    evento = await criar_evento(organizador, status=StatusEvento.PUBLICADO)
+    lote = await criar_lote(evento, preco=100.0, quantidade_total=10)
+    resultado = await pedido_service.criar(
+        db_session, participante_pagante, _data(evento, lote)
+    )
+    pedido = resultado["pedido"]
+    pedido.status = StatusPedido.PAGO
+    await db_session.commit()
+
+    mock_asaas_charges.refund_charge.side_effect = AsaasAPIError(
+        400,
+        '{"errors":[{"code":"invalid_object","description":'
+        '"Somente é possível estornar cobranças recebidas via cartão ou Pix."}]}',
+    )
+    with pytest.raises(HTTPException) as exc:
+        await pedido_service.reembolsar(
+            db_session, participante_pagante, pedido.id, motivo=None
+        )
+    assert exc.value.status_code == 422
+    assert "estornar" in exc.value.detail
+
+    # Nada registrado — o participante pode tentar de novo depois.
+    assert await reembolso_repo.pedido_ids_com_reembolso(
+        db_session, [pedido.id]
+    ) == set()
