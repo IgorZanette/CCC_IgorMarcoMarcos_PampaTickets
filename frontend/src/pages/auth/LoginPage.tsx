@@ -1,10 +1,21 @@
 import { useState } from "react";
+import { AxiosError } from "axios";
 import { Link, useNavigate } from "react-router-dom";
 
-import { login } from "../../api/auth";
+import { login, reenviarConfirmacao } from "../../api/auth";
 import { extractErrorMessage } from "../../lib/errors";
+import { toastInfo } from "../../lib/toast";
 import { AuthShell } from "./AuthShell";
 import forms from "./forms.module.css";
+
+// O backend responde 403 com esta mensagem quando o e-mail ainda não foi
+// confirmado — diferente de "Conta desativada." (também 403).
+const ehEmailNaoConfirmado = (err: unknown): boolean =>
+  err instanceof AxiosError &&
+  err.response?.status === 403 &&
+  /n[ãa]o confirmad/i.test(
+    String((err.response.data as { detail?: string } | undefined)?.detail ?? ""),
+  );
 
 export const LoginPage = () => {
   const navigate = useNavigate();
@@ -21,6 +32,14 @@ export const LoginPage = () => {
       const usuario = await login({ email, senha });
       navigate(usuario.perfil === "ORGANIZADOR" ? "/organizador" : "/inicio");
     } catch (err: unknown) {
+      if (ehEmailNaoConfirmado(err)) {
+        // Leva ao fluxo de confirmação (campo de código + botão de reenviar) e
+        // já dispara um novo código, caso o do cadastro tenha expirado.
+        reenviarConfirmacao({ email }).catch(() => undefined);
+        toastInfo("Confirme seu e-mail para entrar. Enviamos um novo código.");
+        navigate("/confirmar-email", { state: { email, senha } });
+        return;
+      }
       setError(
         extractErrorMessage(
           err,
