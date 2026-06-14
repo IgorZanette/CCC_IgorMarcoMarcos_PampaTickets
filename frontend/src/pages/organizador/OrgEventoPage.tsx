@@ -4,6 +4,7 @@ import { Link, useOutletContext, useParams } from "react-router-dom";
 import {
   baixarRelatorio,
   cancelarEvento,
+  editarEvento,
   encerrarEvento,
   gradientFor,
   obterResumoRelatorio,
@@ -15,11 +16,12 @@ import { MetricCard } from "../../components/MetricCard";
 import { PageHeader } from "../../components/PageHeader";
 import { StatusPill } from "../../components/StatusPill";
 import { extractErrorMessage } from "../../lib/errors";
-import { dateLong, money } from "../../lib/format";
+import { dateLong, localToUtcIso, money, utcIsoToLocalInput } from "../../lib/format";
 import type { OrgOutlet } from "../../layouts/OrganizerLayout";
 
 import shared from "./shared.module.css";
 import styles from "./OrgEventoPage.module.css";
+import form from "./CreateEventPage.module.css";
 
 export const OrgEventoPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -28,6 +30,19 @@ export const OrgEventoPage = () => {
   const [current, setCurrent] = useState<Evento | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Edição inline do evento (UC02). Só permitida em RASCUNHO/PUBLICADO — mesma
+  // regra do backend (`_STATUS_EDITAVEIS`); o botão nem aparece nos demais.
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [dados, setDados] = useState({
+    nome: "",
+    descricao: "",
+    dataInicio: "",
+    dataFim: "",
+    local: "",
+  });
 
   // Estado id-aware das métricas: carrega o id a que pertence, então a troca de evento
   // na navegação é resolvida por derivação no render (sem reset síncrono no effect).
@@ -104,6 +119,41 @@ export const OrgEventoPage = () => {
     }
   };
 
+  const editavel = ev.status === "RASCUNHO" || ev.status === "PUBLICADO";
+
+  const iniciarEdicao = () => {
+    setDados({
+      nome: ev.nome,
+      descricao: ev.descricao ?? "",
+      dataInicio: utcIsoToLocalInput(ev.data_inicio),
+      dataFim: utcIsoToLocalInput(ev.data_fim),
+      local: ev.local,
+    });
+    setEditError(null);
+    setEditing(true);
+  };
+
+  const salvarEdicao = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setEditError(null);
+    try {
+      const atualizado = await editarEvento(ev.id, {
+        nome: dados.nome,
+        descricao: dados.descricao || null,
+        data_inicio: localToUtcIso(dados.dataInicio),
+        data_fim: localToUtcIso(dados.dataFim),
+        local: dados.local,
+      });
+      setCurrent(atualizado);
+      setEditing(false);
+    } catch (err) {
+      setEditError(extractErrorMessage(err, "Falha ao salvar o evento."));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const baixarPdf = async () => {
     setBaixando(true);
     try {
@@ -125,7 +175,16 @@ export const OrgEventoPage = () => {
         actions={
           <>
             <StatusPill status={ev.status} />
-            {ev.status === "RASCUNHO" && (
+            {!editing && editavel && (
+              <button
+                className={shared.btnSecondary}
+                onClick={iniciarEdicao}
+                disabled={busy}
+              >
+                Editar
+              </button>
+            )}
+            {!editing && ev.status === "RASCUNHO" && (
               <button
                 className={shared.btnPrimary}
                 onClick={() => transicionar("publicar")}
@@ -134,7 +193,7 @@ export const OrgEventoPage = () => {
                 Publicar
               </button>
             )}
-            {ev.status === "PUBLICADO" && (
+            {!editing && ev.status === "PUBLICADO" && (
               <button
                 className={shared.btnSecondary}
                 onClick={() => transicionar("encerrar")}
@@ -143,7 +202,7 @@ export const OrgEventoPage = () => {
                 Encerrar
               </button>
             )}
-            {(ev.status === "RASCUNHO" || ev.status === "PUBLICADO") && (
+            {!editing && editavel && (
               <button
                 className={shared.btnDark}
                 onClick={() => transicionar("cancelar")}
@@ -217,31 +276,136 @@ export const OrgEventoPage = () => {
           )}
         </div>
 
-        <div className={shared.card}>
-          <div className={styles.cover} style={{ background: gradientFor(ev.id) }} />
-          <div className={styles.coverInfo}>
-            <div className={styles.metaGrid}>
-              <div>
-                <div className={shared.eyebrow}>Início</div>
-                <div className={styles.metaValue}>{dateLong(ev.data_inicio)}</div>
+        {editing ? (
+          <form className={shared.cardPadded} onSubmit={salvarEdicao}>
+            <h3 className={shared.cardTitle}>Editar evento</h3>
+            <p className={form.lead} style={{ marginTop: 4 }}>
+              As alterações ficam visíveis imediatamente. Só é possível editar
+              eventos em <strong>RASCUNHO</strong> ou <strong>PUBLICADO</strong>.
+            </p>
+
+            <div className={form.field}>
+              <label className={form.fieldLabel}>Nome do evento *</label>
+              <input
+                className={form.input}
+                value={dados.nome}
+                onChange={(e) => setDados({ ...dados, nome: e.target.value })}
+                required
+                minLength={3}
+                maxLength={255}
+              />
+            </div>
+
+            <div className={form.field}>
+              <label className={form.fieldLabel}>Descrição</label>
+              <textarea
+                className={form.textarea}
+                rows={4}
+                value={dados.descricao}
+                onChange={(e) => setDados({ ...dados, descricao: e.target.value })}
+                placeholder="Conte o que torna esse evento único…"
+              />
+            </div>
+
+            <div className={form.row}>
+              <div className={form.field}>
+                <label className={form.fieldLabel}>Início *</label>
+                <input
+                  type="datetime-local"
+                  className={form.input}
+                  value={dados.dataInicio}
+                  onChange={(e) =>
+                    setDados({ ...dados, dataInicio: e.target.value })
+                  }
+                  required
+                />
               </div>
-              <div>
-                <div className={shared.eyebrow}>Encerramento</div>
-                <div className={styles.metaValue}>{dateLong(ev.data_fim)}</div>
-              </div>
-              <div>
-                <div className={shared.eyebrow}>Local</div>
-                <div className={styles.metaValue}>{ev.local}</div>
+              <div className={form.field}>
+                <label className={form.fieldLabel}>Encerramento *</label>
+                <input
+                  type="datetime-local"
+                  className={form.input}
+                  value={dados.dataFim}
+                  onChange={(e) =>
+                    setDados({ ...dados, dataFim: e.target.value })
+                  }
+                  required
+                />
               </div>
             </div>
-            <div className={styles.descBlock}>
-              <div className={shared.eyebrow}>Descrição</div>
-              <p className={styles.desc}>
-                {ev.descricao ?? "Sem descrição cadastrada."}
-              </p>
+
+            <div className={form.field}>
+              <label className={form.fieldLabel}>Local *</label>
+              <input
+                className={form.input}
+                value={dados.local}
+                onChange={(e) => setDados({ ...dados, local: e.target.value })}
+                required
+                minLength={3}
+                maxLength={500}
+              />
+            </div>
+
+            {editError && (
+              <div
+                style={{
+                  marginTop: 12,
+                  padding: "10px 12px",
+                  background: "rgba(200, 16, 46, 0.08)",
+                  color: "#c8102e",
+                  borderRadius: 6,
+                  fontSize: 13,
+                }}
+              >
+                ⚠ {editError}
+              </div>
+            )}
+
+            <div className={form.formActions}>
+              <button
+                type="button"
+                className={shared.btnSecondary}
+                onClick={() => setEditing(false)}
+                disabled={saving}
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className={shared.btnPrimary}
+                disabled={saving}
+              >
+                {saving ? "Salvando…" : "Salvar alterações"}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className={shared.card}>
+            <div className={styles.cover} style={{ background: gradientFor(ev.id) }} />
+            <div className={styles.coverInfo}>
+              <div className={styles.metaGrid}>
+                <div>
+                  <div className={shared.eyebrow}>Início</div>
+                  <div className={styles.metaValue}>{dateLong(ev.data_inicio)}</div>
+                </div>
+                <div>
+                  <div className={shared.eyebrow}>Encerramento</div>
+                  <div className={styles.metaValue}>{dateLong(ev.data_fim)}</div>
+                </div>
+                <div>
+                  <div className={shared.eyebrow}>Local</div>
+                  <div className={styles.metaValue}>{ev.local}</div>
+                </div>
+              </div>
+              <div className={styles.descBlock}>
+                <div className={shared.eyebrow}>Descrição</div>
+                <p className={styles.desc}>
+                  {ev.descricao ?? "Sem descrição cadastrada."}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         <div className={styles.actions}>
           <Link to={`/organizador/eventos/${ev.id}/lotes`} className={shared.btnPrimary}>

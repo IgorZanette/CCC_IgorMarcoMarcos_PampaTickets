@@ -86,3 +86,17 @@ export const localToUtcIso = (value: string): string => {
   const comSegundos = value.length === 16 ? `${value}:00` : value;
   return new Date(`${comSegundos}-03:00`).toISOString();
 };
+
+// Inverso de `localToUtcIso`: recebe um ISO em UTC (vindo do backend) e devolve
+// o valor "YYYY-MM-DDTHH:mm" para pré-preencher um <input type="datetime-local">
+// no fuso de São Paulo. Usado ao editar entidades que já têm datas salvas.
+export const utcIsoToLocalInput = (iso: string): string => {
+  const d = new Date(iso);
+  const data = d.toLocaleDateString("en-CA", { timeZone: TZ }); // YYYY-MM-DD
+  const hora = d.toLocaleTimeString("en-GB", {
+    timeZone: TZ,
+    hour: "2-digit",
+    minute: "2-digit",
+  }); // HH:mm
+  return `${data}T${hora}`;
+};
