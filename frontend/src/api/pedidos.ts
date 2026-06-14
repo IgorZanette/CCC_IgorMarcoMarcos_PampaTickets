@@ -43,11 +43,18 @@ export type PixQrCode = {
   expirationDate?: string;
 };
 
+export type Boleto = {
+  bankSlipUrl: string | null; // PDF do boleto
+  identificationField: string | null; // linha digitável
+  barCode?: string | null;
+};
+
 export type PedidoCriado = {
   pedido: Pedido;
   invoice_url: string;
   charge_id: string;
   pix_qrcode: PixQrCode | null;
+  boleto: Boleto | null;
 };
 
 export type ReembolsoCreate = {
@@ -70,6 +77,7 @@ export type PagamentoStatus = {
   charge_id: string | null;
   invoice_url: string | null;
   pix_qrcode: PixQrCode | null;
+  boleto: Boleto | null;
 };
 
 export const criarPedido = async (payload: PedidoCreate): Promise<PedidoCriado> => {

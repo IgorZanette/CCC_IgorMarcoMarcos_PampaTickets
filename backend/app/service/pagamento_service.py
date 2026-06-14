@@ -1,9 +1,10 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import BackgroundTasks, HTTPException, status
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.integrations.asaas import charges as asaas_charges
 from app.integrations.asaas.exceptions import AsaasAPIError
 from app.models.ingresso import StatusIngresso
@@ -56,11 +57,17 @@ async def criar_pagamento(
         valor=float(pedido.valor_total),
     )
 
+    # PIX é instantâneo (vence hoje); boleto precisa de janela futura, senão
+    # entra em OVERDUE no mesmo dia e o webhook cancelaria o pedido cedo demais.
+    due_date = datetime.now(timezone.utc).date()
+    if metodo == MetodoPagamento.BOLETO:
+        due_date += timedelta(days=settings.BOLETO_DUE_DAYS)
+
     cobranca = await asaas_charges.create_charge(
         customer_id=customer_id,
         billing_type=metodo.value,
         value=float(pedido.valor_total),
-        due_date=datetime.now(timezone.utc).date(),
+        due_date=due_date,
         external_reference=str(pedido.id),
     )
 

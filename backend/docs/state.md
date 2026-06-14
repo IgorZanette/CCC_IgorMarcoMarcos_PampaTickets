@@ -7,6 +7,15 @@
 
 ## Última atualização
 
+**Data:** 14/06/2026
+**Responsável:** Marco Antonio Santolin (boleto bancário — UC09)
+
+> **Boleto bancário (14/06/2026, branch `feat/pagamento-boleto`)** — boleto completo de ponta a ponta. A infra já era genérica (enum `MetodoPagamento.BOLETO`, `create_charge` aceita qualquer `billingType`, webhook agnóstico); as lacunas eram pontuais. **(1) Vencimento por método**: `pagamento_service.criar_pagamento` agora calcula `due_date` = hoje + `BOLETO_DUE_DAYS` (config, default **3**) para boleto; PIX segue vencendo hoje (sem mudança). Sem isso o boleto entraria em `PAYMENT_OVERDUE` no mesmo dia. **(2) Dados do boleto**: novo `asaas_charges.get_boleto_identificacao` (rota `/payments/{id}/identificationField` → linha digitável + código de barras); o PDF (`bankSlipUrl`) já vem no response do `create_charge`. Helper `pedido_service._montar_boleto` junta os dois (best-effort, igual ao QR PIX) e é usado em `criar` e `obter_status_pagamento`. **(3) Schemas**: campo `boleto: dict | None` em `PedidoCriadoResponse` e `PagamentoStatusResponse` (espelha `pix_qrcode`). Webhook/models/migrations sem mudança. **149 testes** (novo `test_criar_pedido_boleto_ok` valida boleto preenchido, pix_qrcode None e vencimento hoje+3). Cartão de crédito fica para fase seguinte (via `invoiceUrl` do Asaas já funcionaria; captura no app envolve PCI).
+
+---
+
+## Última atualização (anterior)
+
 **Data:** 12/06/2026
 **Responsável:** Marcos Paulo (UC15 WhatsApp — draft estrutural)
 

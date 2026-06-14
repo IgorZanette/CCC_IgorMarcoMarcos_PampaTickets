@@ -45,6 +45,43 @@ async def test_criar_pedido_pix_ok(
     assert lote.quantidade_vendida == 2
 
 
+async def test_criar_pedido_boleto_ok(
+    db_session,
+    participante_pagante,
+    organizador,
+    criar_evento,
+    criar_lote,
+    mock_asaas_charges,
+):
+    from datetime import datetime, timedelta, timezone
+
+    from app.core.config import settings
+
+    evento = await criar_evento(organizador, status=StatusEvento.PUBLICADO)
+    lote = await criar_lote(evento, preco=100.0, quantidade_total=10)
+    resultado = await pedido_service.criar(
+        db_session,
+        participante_pagante,
+        _data(evento, lote, quantidade=1, metodo=MetodoPagamento.BOLETO),
+    )
+
+    # Boleto traz PDF + linha digitável; QR PIX não é buscado.
+    assert resultado["pix_qrcode"] is None
+    boleto = resultado["boleto"]
+    assert boleto is not None
+    assert boleto["bankSlipUrl"] == "http://invoice.test/boleto.pdf"
+    assert boleto["identificationField"]
+    mock_asaas_charges.get_boleto_identificacao.assert_awaited_once()
+    mock_asaas_charges.get_pix_qrcode.assert_not_awaited()
+
+    # Vencimento futuro (hoje + BOLETO_DUE_DAYS), não "hoje" como o PIX.
+    due_date = mock_asaas_charges.create_charge.call_args.kwargs["due_date"]
+    esperado = (
+        datetime.now(timezone.utc) + timedelta(days=settings.BOLETO_DUE_DAYS)
+    ).date()
+    assert due_date == esperado
+
+
 async def test_criar_pedido_precisao_decimal(
     db_session,
     participante_pagante,

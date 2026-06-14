@@ -22,6 +22,20 @@ async def get_charge(*, charge_id: str) -> dict:
     return response.json()
 
 
+async def get_boleto_identificacao(*, charge_id: str) -> dict:
+    """Linha digitável e código de barras do boleto (rota específica de boleto).
+
+    Retorna `{"identificationField": "...", "barCode": "...", "nossoNumero": "..."}`.
+    O PDF do boleto (`bankSlipUrl`) já vem no response do `create_charge`.
+    """
+    route = f"/payments/{charge_id}/identificationField"
+
+    response = await get_client().get(route)
+    if response.is_error:
+        raise AsaasAPIError(response.status_code, response.text)
+    return response.json()
+
+
 async def create_charge(
     *,
     customer_id: str,

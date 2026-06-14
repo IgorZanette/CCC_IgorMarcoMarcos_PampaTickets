@@ -27,6 +27,26 @@ from app.schemas.pedido import PedidoCreate
 from app.service import cancelamento_service, cupom_service, pagamento_service
 
 
+async def _montar_boleto(charge_id: str, bank_slip_url: str | None) -> dict | None:
+    """Junta o PDF do boleto (`bankSlipUrl`, já no response da cobrança) com a
+    linha digitável (rota específica). Best-effort: falha na busca loga e segue
+    com os dados parciais — mesma tolerância do QR Code PIX.
+    """
+    identificacao: dict = {}
+    try:
+        identificacao = await asaas_charges.get_boleto_identificacao(
+            charge_id=charge_id
+        )
+    except AsaasAPIError:
+        logger.warning("Falha ao buscar linha digitável do boleto para charge {}", charge_id)
+
+    return {
+        "bankSlipUrl": bank_slip_url,
+        "identificationField": identificacao.get("identificationField"),
+        "barCode": identificacao.get("barCode"),
+    }
+
+
 async def criar(db: AsyncSession, participante: Usuario, data: PedidoCreate) -> dict:
     evento = await evento_repo.get_by_id(db, data.evento_id)
     if evento is None or evento.status != StatusEvento.PUBLICADO:
@@ -146,21 +166,25 @@ async def criar(db: AsyncSession, participante: Usuario, data: PedidoCreate) -> 
 
     pedido_com_itens = await pedido_repo.get_by_id_com_itens(db, pedido.id)
 
+    charge_id = cobranca.get("id", "")
+
     pix_qrcode = None
-    if data.metodo == MetodoPagamento.PIX:
-        charge_id = cobranca.get("id", "")
-        if charge_id:
-            try:
-                pix_qrcode = await asaas_charges.get_pix_qrcode(charge_id=charge_id)
-            except AsaasAPIError:
-                logger.warning("Falha ao buscar QR Code PIX para charge {}", charge_id)
-                pass
+    if data.metodo == MetodoPagamento.PIX and charge_id:
+        try:
+            pix_qrcode = await asaas_charges.get_pix_qrcode(charge_id=charge_id)
+        except AsaasAPIError:
+            logger.warning("Falha ao buscar QR Code PIX para charge {}", charge_id)
+
+    boleto = None
+    if data.metodo == MetodoPagamento.BOLETO and charge_id:
+        boleto = await _montar_boleto(charge_id, cobranca.get("bankSlipUrl"))
 
     return {
         "pedido": pedido_com_itens,
         "invoice_url": cobranca.get("invoiceUrl", ""),
-        "charge_id": cobranca.get("id", ""),
+        "charge_id": charge_id,
         "pix_qrcode": pix_qrcode,
+        "boleto": boleto,
     }
 
 
@@ -288,10 +312,13 @@ async def obter_status_pagamento(
 
     invoice_url = None
     pix_qrcode = None
+    boleto = None
     if pagamento.charge_id:
+        bank_slip_url = None
         try:
             cobranca = await asaas_charges.get_charge(charge_id=pagamento.charge_id)
             invoice_url = cobranca.get("invoiceUrl")
+            bank_slip_url = cobranca.get("bankSlipUrl")
         except AsaasAPIError:
             logger.warning(
                 "Falha ao consultar cobrança {} para status de pagamento",
@@ -307,6 +334,8 @@ async def obter_status_pagamento(
                     "Falha ao buscar QR Code PIX da cobrança {}",
                     pagamento.charge_id,
                 )
+        elif pagamento.metodo == MetodoPagamento.BOLETO:
+            boleto = await _montar_boleto(pagamento.charge_id, bank_slip_url)
 
     return {
         "pedido_id": pedido.id,
@@ -316,4 +345,5 @@ async def obter_status_pagamento(
         "charge_id": pagamento.charge_id,
         "invoice_url": invoice_url,
         "pix_qrcode": pix_qrcode,
+        "boleto": boleto,
     }

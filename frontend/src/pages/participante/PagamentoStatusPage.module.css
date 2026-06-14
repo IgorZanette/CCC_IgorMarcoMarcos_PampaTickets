@@ -134,6 +134,57 @@
   resize: vertical;
 }
 
+.boletoWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.boletoWrap .pixPayload {
+  margin-top: 0;
+  min-height: 56px;
+}
+
+.boletoWrap .secondary {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  min-width: 220px;
+  text-decoration: none;
+}
+
+/* Ação principal de pagamento (boleto/cartão) — destacada para o usuário
+   não perder de vista o botão que abre o boleto ou a página do cartão. */
+.payCta {
+  width: 100%;
+  padding: 16px;
+  border-radius: var(--pt-r-md);
+  background: var(--pt-accent);
+  color: var(--pt-accent-on);
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  transition: transform var(--pt-t-fast), filter var(--pt-t-fast);
+}
+
+.payCta:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.boletoCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.boletoCopyLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pt-text-dim);
+}
+
 .actions {
   display: flex;
   gap: 12px;

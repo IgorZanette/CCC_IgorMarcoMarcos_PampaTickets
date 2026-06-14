@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     ASAAS_API_KEY: str
     ASAAS_BASE_URL_UAT: str
     ASAAS_WEBHOOK_TOKEN: str
+    # Dias até o vencimento do boleto. PIX é instantâneo (vence no mesmo dia);
+    # o boleto precisa de uma janela futura, senão entra em OVERDUE cedo demais.
+    BOLETO_DUE_DAYS: int = 3
 
     # Email (recuperação de senha)
     SMTP_HOST: str = "smtp.gmail.com"
