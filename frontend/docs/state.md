@@ -8,8 +8,13 @@
 ## Última atualização
 
 **Data:** 14/06/2026
-**Responsável:** Marco Antonio Santolin (editar evento UC02)
+**Responsável:** Marco Antonio Santolin (boleto UC09 + editar evento UC02)
 
+> Boleto bancário no checkout (14/06/2026 — branch `feat/pagamento-boleto`):
+> 1. **Seção de boleto na `PagamentoStatusPage`**: quando o pedido está aguardando e o método é boleto, mostra a **linha digitável** copiável (botão "Copiar linha digitável" via `navigator.clipboard`) + link "Abrir boleto (PDF)". Espelha a seção do PIX e reusa `.card`/`.hint`/`.pixPayload`/`.secondary`. Sobrevive a reload: reidrata o boleto via `obterPagamento` quando o state da navegação se perde (mesmo padrão do QR PIX).
+> 2. **API**: novo tipo `Boleto` (`bankSlipUrl`, `identificationField`, `barCode`) e campo `boleto` em `PedidoCriado` e `PagamentoStatus` (`api/pedidos.ts`). O `CheckoutPage` repassa `criado.boleto` no state da navegação. O seletor de método e os hints já existiam.
+> 3. **Backend**: vencimento de 3 dias para boleto + busca da linha digitável no Asaas (ver `backend/docs/state.md`).
+>
 > Editar evento (UC02) na `OrgEventoPage` (14/06/2026):
 > 1. **Edição inline**: botão "Editar" no header abre um formulário no lugar do card de detalhes (nome, descrição, início, encerramento, local), pré-preenchido com os valores atuais. Salvar chama `PUT /eventos/:id` via `editarEvento`, atualiza o evento em memória (reflete na hora) e sai do modo edição. Erros do backend (409 status inválido, 422 data) aparecem via `extractErrorMessage`.
 > 2. **Mesma regra do backend**: o botão "Editar" só aparece em **RASCUNHO** ou **PUBLICADO** (espelha `_STATUS_EDITAVEIS` do `evento_service`) — a UI nunca oferece uma edição que o servidor recusaria. Durante a edição, os botões de transição (Publicar/Encerrar/Cancelar) ficam ocultos para evitar ações conflitantes.

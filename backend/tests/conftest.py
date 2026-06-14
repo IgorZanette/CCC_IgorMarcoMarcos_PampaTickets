@@ -311,6 +311,7 @@ def mock_asaas_charges(monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
         return {
             "id": f"pay_test{next(contador)}",
             "invoiceUrl": "http://invoice.test/pay",
+            "bankSlipUrl": "http://invoice.test/boleto.pdf",
         }
 
     mocks = SimpleNamespace(
@@ -318,11 +319,18 @@ def mock_asaas_charges(monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
         get_pix_qrcode=AsyncMock(
             return_value={"encodedImage": "iVBORw0KGgo=", "payload": "00020126..."}
         ),
+        get_boleto_identificacao=AsyncMock(
+            return_value={
+                "identificationField": "23793.38128 60000.000000 00000.000000 0 00000000000000",
+                "barCode": "23790000000000000000000000000000000000000000",
+            }
+        ),
         get_charge=AsyncMock(
             return_value={
                 "id": "pay_test1",
                 "status": "CONFIRMED",
                 "invoiceUrl": "http://invoice.test/pay",
+                "bankSlipUrl": "http://invoice.test/boleto.pdf",
             }
         ),
         refund_charge=AsyncMock(return_value={"id": "pay_test1", "status": "REFUNDED"}),
@@ -330,6 +338,9 @@ def mock_asaas_charges(monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
     )
     monkeypatch.setattr(charges, "create_charge", mocks.create_charge)
     monkeypatch.setattr(charges, "get_pix_qrcode", mocks.get_pix_qrcode)
+    monkeypatch.setattr(
+        charges, "get_boleto_identificacao", mocks.get_boleto_identificacao
+    )
     monkeypatch.setattr(charges, "get_charge", mocks.get_charge)
     monkeypatch.setattr(charges, "refund_charge", mocks.refund_charge)
     monkeypatch.setattr(charges, "delete_charge", mocks.delete_charge)

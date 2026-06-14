@@ -157,7 +157,11 @@ export const CheckoutPage = () => {
       // Vai para a tela de status, que mostra QR/fatura enquanto pendente e faz
       // polling até o webhook do Asaas confirmar (ou recusar) o pagamento.
       navigate(`/eventos/${ev.id}/pagamento/${criado.pedido.id}`, {
-        state: { invoiceUrl: criado.invoice_url, pixQrcode: criado.pix_qrcode },
+        state: {
+          invoiceUrl: criado.invoice_url,
+          pixQrcode: criado.pix_qrcode,
+          boleto: criado.boleto,
+        },
       });
     } catch (err) {
       setError(extractErrorMessage(err, "Falha ao criar o pedido."));

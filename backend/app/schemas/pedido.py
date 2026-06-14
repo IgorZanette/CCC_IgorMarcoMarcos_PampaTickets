@@ -49,6 +49,7 @@ class PedidoCriadoResponse(BaseModel):
     invoice_url: str
     charge_id: str
     pix_qrcode: dict | None = None
+    boleto: dict | None = None
 
 
 class PagamentoStatusResponse(BaseModel):
@@ -59,3 +60,4 @@ class PagamentoStatusResponse(BaseModel):
     charge_id: str | None = None
     invoice_url: str | None = None
     pix_qrcode: dict | None = None
+    boleto: dict | None = None

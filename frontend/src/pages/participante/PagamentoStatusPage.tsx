@@ -5,6 +5,7 @@ import { obterEvento, type Evento } from "../../api/eventos";
 import {
   obterPagamento,
   obterPedido,
+  type Boleto,
   type Pedido,
   type PixQrCode,
 } from "../../api/pedidos";
@@ -13,7 +14,11 @@ import { dateLong, money } from "../../lib/format";
 
 import styles from "./PagamentoStatusPage.module.css";
 
-type LocationState = { invoiceUrl?: string; pixQrcode?: PixQrCode | null } | null;
+type LocationState = {
+  invoiceUrl?: string;
+  pixQrcode?: PixQrCode | null;
+  boleto?: Boleto | null;
+} | null;
 
 // Intervalo do polling. A API atualiza o status do pedido quando o webhook do
 // Asaas chega; aqui consultamos periodicamente até sair de PENDENTE.
@@ -29,6 +34,8 @@ export const PagamentoStatusPage = () => {
   const [pixQrcode, setPixQrcode] = useState<PixQrCode | null>(
     state?.pixQrcode ?? null,
   );
+  const [boleto, setBoleto] = useState<Boleto | null>(state?.boleto ?? null);
+  const [copiado, setCopiado] = useState(false);
 
   const [ev, setEv] = useState<Evento | null>(null);
   const [pedido, setPedido] = useState<Pedido | null>(null);
@@ -39,17 +46,19 @@ export const PagamentoStatusPage = () => {
     obterEvento(id).then(setEv).catch(() => undefined);
   }, [id]);
 
-  // #10: reidrata fatura/QR PIX quando o state da navegação se perdeu (refresh,
-  // link direto ou voltar/avançar) — sem isso o usuário ficaria sem como pagar.
+  // #10: reidrata fatura/QR PIX/boleto quando o state da navegação se perdeu
+  // (refresh, link direto ou voltar/avançar) — sem isso o usuário ficaria sem
+  // como pagar.
   useEffect(() => {
     if (!pedidoId) return;
-    if (state?.invoiceUrl || state?.pixQrcode) return;
+    if (state?.invoiceUrl || state?.pixQrcode || state?.boleto) return;
     let cancelled = false;
     obterPagamento(pedidoId)
       .then((p) => {
         if (cancelled) return;
         setInvoiceUrl(p.invoice_url ?? undefined);
         setPixQrcode(p.pix_qrcode);
+        setBoleto(p.boleto);
       })
       .catch(() => undefined);
     return () => {
@@ -100,6 +109,17 @@ export const PagamentoStatusPage = () => {
       ? "Não conseguimos confirmar o pagamento deste pedido. Nenhum valor foi cobrado e os ingressos não foram emitidos."
       : "Assim que o pagamento for confirmado, esta tela é atualizada automaticamente.";
 
+  const copiarLinhaDigitavel = async () => {
+    if (!boleto?.identificationField) return;
+    try {
+      await navigator.clipboard.writeText(boleto.identificationField);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    } catch {
+      // Sem clipboard (contexto não-seguro): o campo segue selecionável manualmente.
+    }
+  };
+
   return (
     <div className={styles.page}>
       <header className={styles.header}>
@@ -133,6 +153,45 @@ export const PagamentoStatusPage = () => {
                 className={styles.pixPayload}
               />
             </div>
+          </div>
+        </section>
+      )}
+
+      {aguardando && boleto && (
+        <section className={styles.card}>
+          <h3 className={styles.cardTitle}>Pague com boleto</h3>
+          <div className={styles.boletoWrap}>
+            <div className={styles.hint}>
+              Copie a linha digitável e pague no app ou site do seu banco. A
+              compensação leva até 3 dias úteis — seus ingressos são emitidos
+              assim que o pagamento for confirmado.
+            </div>
+            {boleto.identificationField && (
+              <>
+                <textarea
+                  readOnly
+                  value={boleto.identificationField}
+                  className={styles.pixPayload}
+                />
+                <button
+                  type="button"
+                  className={styles.secondary}
+                  onClick={copiarLinhaDigitavel}
+                >
+                  {copiado ? "Copiado ✓" : "Copiar linha digitável"}
+                </button>
+              </>
+            )}
+            {boleto.bankSlipUrl && (
+              <a
+                href={boleto.bankSlipUrl}
+                target="_blank"
+                rel="noreferrer"
+                className={styles.secondary}
+              >
+                Abrir boleto (PDF)
+              </a>
+            )}
           </div>
         </section>
       )}
