@@ -1,10 +1,11 @@
 // Fluxo de reembolso (UC10) na tela "Meus ingressos": botão → modal → envio,
 // estados vindos do backend (reembolso_solicitado), cortesias e erro 409.
 
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AxiosError, type AxiosResponse } from "axios";
 import { MemoryRouter } from "react-router-dom";
+import { Toaster } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Usuario } from "../../api/auth";
@@ -58,10 +59,13 @@ const reembolso: Reembolso = {
   processado_em: null,
 };
 
-const renderPage = () =>
+const renderPage = (opts: { withToaster?: boolean } = {}) =>
   render(
     <MemoryRouter>
       <MyTicketsPage />
+      {/* O Toaster só é montado quando o teste precisa observar um toast — o
+          sucesso/erro dispara via Sonner, que renderiza fora do modal. */}
+      {opts.withToaster && <Toaster />}
     </MemoryRouter>,
   );
 
@@ -106,7 +110,11 @@ describe("MyTicketsPage — reembolso", () => {
     });
     const marcados = await screen.findAllByText(/Reembolso solicitado/);
     expect(marcados).toHaveLength(2);
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    // O modal fecha com animação (AnimatePresence) — fica no DOM durante o
+    // fade-out, então esperamos a remoção em vez de checar de forma síncrona.
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
     expect(
       screen.queryByRole("button", { name: "Solicitar reembolso" }),
     ).not.toBeInTheDocument();
@@ -163,7 +171,7 @@ describe("MyTicketsPage — reembolso", () => {
     vi.mocked(reembolsarPedido).mockRejectedValue(conflito);
     const user = userEvent.setup();
 
-    renderPage();
+    renderPage({ withToaster: true });
     await user.click(
       await screen.findByRole("button", { name: "Solicitar reembolso" }),
     );
@@ -171,9 +179,11 @@ describe("MyTicketsPage — reembolso", () => {
       screen.getByRole("button", { name: "Confirmar reembolso" }),
     );
 
-    const dialog = await screen.findByRole("dialog");
+    // O erro do backend aparece num toast (fora do modal) e o modal continua
+    // aberto para o usuário tentar de novo.
     expect(
-      within(dialog).getByText(/Reembolso já solicitado/),
+      await screen.findByText(/Reembolso já solicitado/),
     ).toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 });
