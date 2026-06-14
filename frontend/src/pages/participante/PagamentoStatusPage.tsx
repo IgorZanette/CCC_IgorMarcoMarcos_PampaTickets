@@ -162,12 +162,26 @@ export const PagamentoStatusPage = () => {
           <h3 className={styles.cardTitle}>Pague com boleto</h3>
           <div className={styles.boletoWrap}>
             <div className={styles.hint}>
-              Copie a linha digitável e pague no app ou site do seu banco. A
-              compensação leva até 3 dias úteis — seus ingressos são emitidos
-              assim que o pagamento for confirmado.
+              Clique em <strong>Abrir boleto</strong> para visualizar, imprimir
+              ou escanear o código de barras — ou copie a linha digitável e pague
+              no app do seu banco. A compensação leva até 3 dias úteis; seus
+              ingressos são emitidos assim que o pagamento for confirmado.
             </div>
+            {boleto.bankSlipUrl && (
+              <a
+                href={boleto.bankSlipUrl}
+                target="_blank"
+                rel="noreferrer"
+                className={styles.boletoCta}
+              >
+                📄 Abrir boleto
+              </a>
+            )}
             {boleto.identificationField && (
-              <>
+              <div className={styles.boletoCopy}>
+                <span className={styles.boletoCopyLabel}>
+                  Ou copie a linha digitável
+                </span>
                 <textarea
                   readOnly
                   value={boleto.identificationField}
@@ -180,17 +194,7 @@ export const PagamentoStatusPage = () => {
                 >
                   {copiado ? "Copiado ✓" : "Copiar linha digitável"}
                 </button>
-              </>
-            )}
-            {boleto.bankSlipUrl && (
-              <a
-                href={boleto.bankSlipUrl}
-                target="_blank"
-                rel="noreferrer"
-                className={styles.secondary}
-              >
-                Abrir boleto (PDF)
-              </a>
+              </div>
             )}
           </div>
         </section>
