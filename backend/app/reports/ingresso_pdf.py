@@ -2,7 +2,6 @@ import io
 from datetime import datetime, timezone
 from typing import BinaryIO
 
-from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
@@ -21,8 +20,8 @@ from app.reports import branding
 
 
 def gerar_pdf_ingresso(ingresso: Ingresso) -> BinaryIO:
-    """Gera o PDF de um ingresso individual, com identidade visual da marca,
-    QR Code real (escaneável) e layout estilo ticket."""
+    """PDF do ingresso no tema escuro da plataforma, com QR Code real em
+    destaque e visual alinhado ao app."""
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
         buffer,
@@ -39,7 +38,7 @@ def gerar_pdf_ingresso(ingresso: Ingresso) -> BinaryIO:
         parent=styles["Normal"],
         fontSize=11,
         alignment=TA_CENTER,
-        textColor=branding.GOLD,
+        textColor=branding.GOLD_CLARO,
         spaceAfter=2,
     )
     marca = ParagraphStyle(
@@ -47,7 +46,7 @@ def gerar_pdf_ingresso(ingresso: Ingresso) -> BinaryIO:
         parent=styles["Heading1"],
         fontSize=22,
         alignment=TA_CENTER,
-        textColor=branding.VERDE,
+        textColor=branding.ACCENT,
         spaceAfter=2,
     )
     evento_nome_style = ParagraphStyle(
@@ -55,7 +54,7 @@ def gerar_pdf_ingresso(ingresso: Ingresso) -> BinaryIO:
         parent=styles["Heading2"],
         fontSize=18,
         alignment=TA_CENTER,
-        textColor=colors.white,
+        textColor=branding.TEXTO_LIGHT,
         spaceAfter=4,
     )
     evento_meta_style = ParagraphStyle(
@@ -63,20 +62,20 @@ def gerar_pdf_ingresso(ingresso: Ingresso) -> BinaryIO:
         parent=styles["Normal"],
         fontSize=11,
         alignment=TA_CENTER,
-        textColor=colors.white,
+        textColor=branding.TEXTO_LIGHT,
         leading=16,
     )
     label_style = ParagraphStyle(
         "Label",
         parent=styles["Normal"],
         fontSize=8,
-        textColor=branding.TEXTO_DIM,
+        textColor=branding.TEXTO_DIM_DARK,
     )
     value_style = ParagraphStyle(
         "Value",
         parent=styles["Normal"],
         fontSize=11,
-        textColor=branding.TEXTO,
+        textColor=branding.TEXTO_LIGHT,
         leading=14,
     )
     qr_hint = ParagraphStyle(
@@ -84,14 +83,14 @@ def gerar_pdf_ingresso(ingresso: Ingresso) -> BinaryIO:
         parent=styles["Normal"],
         fontSize=9,
         alignment=TA_CENTER,
-        textColor=branding.TEXTO_DIM,
+        textColor=branding.TEXTO_DIM_DARK,
     )
     footer_style = ParagraphStyle(
         "Footer",
         parent=styles["Italic"],
         fontSize=8,
         alignment=TA_CENTER,
-        textColor=branding.TEXTO_DIM,
+        textColor=branding.TEXTO_DIM_DARK,
     )
 
     evento = ingresso.lote.evento
@@ -99,7 +98,6 @@ def gerar_pdf_ingresso(ingresso: Ingresso) -> BinaryIO:
 
     story: list = []
 
-    # Cabeçalho com logo + marca
     logo = branding.logo_flowable(width_cm=3.2)
     if logo is not None:
         logo.hAlign = "CENTER"
@@ -114,7 +112,7 @@ def gerar_pdf_ingresso(ingresso: Ingresso) -> BinaryIO:
     destaque = Table(
         [
             [Paragraph(evento.nome, evento_nome_style)],
-            [Paragraph(f"📅 {data_fmt}<br/>📍 {evento.local}", evento_meta_style)],
+            [Paragraph(f"{data_fmt}<br/>{evento.local}", evento_meta_style)],
         ],
         colWidths=[16 * cm],
     )
@@ -133,18 +131,19 @@ def gerar_pdf_ingresso(ingresso: Ingresso) -> BinaryIO:
     story.append(destaque)
     story.append(Spacer(1, 0.6 * cm))
 
-    # QR Code real, centralizado e em destaque
+    # QR Code real, centralizado (fundo branco — mantém escaneável no escuro)
     qr = branding.qrcode_flowable(ingresso.qr_code_hash, size_cm=4.8)
     qr.hAlign = "CENTER"
     story.append(qr)
     story.append(Paragraph("Apresente este QR Code na entrada", qr_hint))
     story.append(Spacer(1, 0.6 * cm))
 
-    # Dados do participante e do ingresso, em duas colunas
     def campo(label: str, valor: str):
         return [Paragraph(label.upper(), label_style), Paragraph(valor, value_style)]
 
-    status_cor = branding.VERDE if ingresso.status.value == "ATIVO" else branding.BORDEAUX
+    status_cor = (
+        branding.ACCENT if ingresso.status.value == "ATIVO" else branding.BORDEAUX
+    )
     status_style = ParagraphStyle(
         "Status", parent=value_style, textColor=status_cor, fontSize=11
     )
@@ -170,14 +169,13 @@ def gerar_pdf_ingresso(ingresso: Ingresso) -> BinaryIO:
                 ("TOPPADDING", (0, 0), (-1, -1), 6),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
                 ("LEFTPADDING", (0, 0), (-1, -1), 0),
-                ("LINEBELOW", (0, 0), (-1, -2), 0.5, branding.BORDA),
+                ("LINEBELOW", (0, 0), (-1, -2), 0.5, branding.BORDA_DARK),
             ]
         )
     )
     story.append(detalhes)
     story.append(Spacer(1, 0.4 * cm))
 
-    # Código único do ingresso
     story.append(Paragraph("CÓDIGO DO INGRESSO", label_style))
     story.append(
         Paragraph(
@@ -186,9 +184,8 @@ def gerar_pdf_ingresso(ingresso: Ingresso) -> BinaryIO:
         )
     )
 
-    # Rodapé
     story.append(Spacer(1, 0.8 * cm))
-    story.append(HRFlowable(width="100%", thickness=0.5, color=branding.BORDA))
+    story.append(HRFlowable(width="100%", thickness=0.5, color=branding.BORDA_DARK))
     story.append(Spacer(1, 0.2 * cm))
     story.append(
         Paragraph(
@@ -198,13 +195,17 @@ def gerar_pdf_ingresso(ingresso: Ingresso) -> BinaryIO:
         )
     )
 
-    doc.build(story)
+    doc.build(
+        story,
+        onFirstPage=branding.pintar_fundo_dark,
+        onLaterPages=branding.pintar_fundo_dark,
+    )
     buffer.seek(0)
     return buffer
 
 
 def gerar_pdf_certificado(ingresso: Ingresso) -> BinaryIO:
-    """Gera o PDF de certificado de participação, com moldura e marca."""
+    """Certificado de participação no tema escuro, com moldura e marca."""
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
         buffer,
@@ -221,7 +222,7 @@ def gerar_pdf_certificado(ingresso: Ingresso) -> BinaryIO:
         parent=styles["Heading1"],
         fontSize=30,
         alignment=TA_CENTER,
-        textColor=branding.VERDE,
+        textColor=branding.ACCENT,
         spaceAfter=6,
     )
     selo = ParagraphStyle(
@@ -229,7 +230,7 @@ def gerar_pdf_certificado(ingresso: Ingresso) -> BinaryIO:
         parent=styles["Normal"],
         fontSize=12,
         alignment=TA_CENTER,
-        textColor=branding.GOLD,
+        textColor=branding.GOLD_CLARO,
         spaceAfter=30,
     )
     corpo = ParagraphStyle(
@@ -237,7 +238,7 @@ def gerar_pdf_certificado(ingresso: Ingresso) -> BinaryIO:
         parent=styles["Normal"],
         fontSize=15,
         alignment=TA_CENTER,
-        textColor=branding.TEXTO,
+        textColor=branding.TEXTO_LIGHT,
         spaceAfter=16,
         leading=22,
     )
@@ -246,7 +247,7 @@ def gerar_pdf_certificado(ingresso: Ingresso) -> BinaryIO:
         parent=styles["Heading2"],
         fontSize=22,
         alignment=TA_CENTER,
-        textColor=branding.VERDE,
+        textColor=branding.ACCENT,
         spaceAfter=16,
     )
     assinatura = ParagraphStyle(
@@ -254,7 +255,7 @@ def gerar_pdf_certificado(ingresso: Ingresso) -> BinaryIO:
         parent=styles["Normal"],
         fontSize=12,
         alignment=TA_CENTER,
-        textColor=branding.TEXTO_DIM,
+        textColor=branding.TEXTO_DIM_DARK,
     )
 
     evento = ingresso.lote.evento
@@ -284,7 +285,7 @@ def gerar_pdf_certificado(ingresso: Ingresso) -> BinaryIO:
 
     story.append(Spacer(1, 2 * cm))
     story.append(
-        HRFlowable(width="50%", thickness=1, color=branding.BORDA, hAlign="CENTER")
+        HRFlowable(width="50%", thickness=1, color=branding.BORDA_DARK, hAlign="CENTER")
     )
     story.append(Spacer(1, 0.2 * cm))
     story.append(Paragraph("PampaTickets", assinatura))
@@ -295,6 +296,10 @@ def gerar_pdf_certificado(ingresso: Ingresso) -> BinaryIO:
         )
     )
 
-    doc.build(story)
+    doc.build(
+        story,
+        onFirstPage=branding.pintar_fundo_dark,
+        onLaterPages=branding.pintar_fundo_dark,
+    )
     buffer.seek(0)
     return buffer

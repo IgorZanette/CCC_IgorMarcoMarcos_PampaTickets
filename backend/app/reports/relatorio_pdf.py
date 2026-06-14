@@ -3,7 +3,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import BinaryIO
 
-from reportlab.lib import colors
+from reportlab.lib.colors import Color
+from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
@@ -46,62 +47,83 @@ class DadosRelatorio:
     gerado_em: datetime
 
 
-def gerar_pdf_relatorio(dados: DadosRelatorio) -> BinaryIO:
-    buffer = io.BytesIO()
+def _hex(cor: Color) -> str:
+    return f"#{int(cor.red * 255):02x}{int(cor.green * 255):02x}{int(cor.blue * 255):02x}"
 
+
+def gerar_pdf_relatorio(dados: DadosRelatorio) -> BinaryIO:
+    """Relatório financeiro no tema escuro da plataforma — visual de "resumo do
+    dashboard", com cards de métrica e tabela escura, em vez de um documento
+    genérico claro."""
+    buffer = io.BytesIO()
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
         rightMargin=2 * cm,
         leftMargin=2 * cm,
-        topMargin=2 * cm,
-        bottomMargin=2 * cm,
+        topMargin=1.8 * cm,
+        bottomMargin=1.8 * cm,
     )
 
     styles = getSampleStyleSheet()
-
     title_style = ParagraphStyle(
         "RelTitle",
         parent=styles["Heading1"],
         fontSize=20,
-        spaceAfter=4,
-        alignment=1,
-        textColor=branding.VERDE,
+        spaceAfter=2,
+        alignment=TA_CENTER,
+        textColor=branding.TEXTO_LIGHT,
     )
     subtitle_style = ParagraphStyle(
         "RelSubtitle",
         parent=styles["Normal"],
         fontSize=11,
         spaceAfter=2,
-        alignment=1,
-        textColor=branding.GOLD,
+        alignment=TA_CENTER,
+        textColor=branding.ACCENT,
     )
     section_style = ParagraphStyle(
         "RelSection",
         parent=styles["Heading2"],
         fontSize=13,
-        spaceBefore=14,
-        spaceAfter=6,
-        textColor=branding.VERDE,
+        spaceBefore=16,
+        spaceAfter=8,
+        textColor=branding.TEXTO_LIGHT,
     )
-    normal_style = ParagraphStyle(
-        "RelNormal",
+    info_style = ParagraphStyle(
+        "RelInfo",
         parent=styles["Normal"],
         fontSize=10,
-        spaceAfter=4,
-        textColor=colors.HexColor("#2d3748"),
+        spaceAfter=3,
+        textColor=branding.TEXTO_DIM_DARK,
     )
     footer_style = ParagraphStyle(
         "RelFooter",
         parent=styles["Italic"],
         fontSize=8,
-        alignment=1,
-        textColor=colors.HexColor("#718096"),
+        alignment=TA_CENTER,
+        textColor=branding.TEXTO_DIM_DARK,
+    )
+    card_label = ParagraphStyle(
+        "CardLabel",
+        parent=styles["Normal"],
+        fontSize=8,
+        textColor=branding.TEXTO_DIM_DARK,
+        leading=10,
     )
 
-    story = []
+    def card_value(cor: Color) -> ParagraphStyle:
+        return ParagraphStyle(
+            "CardValue",
+            parent=styles["Normal"],
+            fontSize=17,
+            leading=20,
+            textColor=cor,
+        )
 
-    # Cabeçalho
+    story: list = []
+
+    # Cabeçalho com logo
     logo = branding.logo_flowable(width_cm=2.6)
     if logo is not None:
         logo.hAlign = "CENTER"
@@ -110,84 +132,113 @@ def gerar_pdf_relatorio(dados: DadosRelatorio) -> BinaryIO:
     story.append(Paragraph("PampaTickets", title_style))
     story.append(Paragraph("Relatório Financeiro", subtitle_style))
     story.append(Spacer(1, 0.3 * cm))
-    story.append(
-        HRFlowable(width="100%", thickness=1, color=colors.HexColor("#e2e8f0"))
-    )
+    story.append(HRFlowable(width="100%", thickness=0.7, color=branding.BORDA_DARK))
     story.append(Spacer(1, 0.3 * cm))
-    story.append(Paragraph(f"<b>Evento:</b> {dados.evento_nome}", normal_style))
+
+    info_label = f'<font color="{_hex(branding.TEXTO_LIGHT)}"><b>{{}}</b></font> {{}}'
+    story.append(
+        Paragraph(info_label.format("Evento:", dados.evento_nome), info_style)
+    )
     story.append(
         Paragraph(
-            f"<b>Data do evento:</b> {dados.evento_data.strftime('%d/%m/%Y %H:%M')}",
-            normal_style,
+            info_label.format(
+                "Data:", dados.evento_data.strftime("%d/%m/%Y %H:%M")
+            ),
+            info_style,
         )
     )
-    story.append(Paragraph(f"<b>Local:</b> {dados.evento_local}", normal_style))
-    story.append(Spacer(1, 0.5 * cm))
+    story.append(Paragraph(info_label.format("Local:", dados.evento_local), info_style))
+    story.append(Spacer(1, 0.4 * cm))
 
-    # Resumo executivo
-    story.append(Paragraph("Resumo Financeiro", section_style))
+    # Cards de métrica (grid 2 colunas com gaps, estilo dashboard)
+    story.append(Paragraph("Resumo financeiro", section_style))
 
-    resumo_data = [
-        ["Métrica", "Valor"],
-        ["Total de ingressos vendidos", str(dados.total_ingressos)],
-        ["Total de check-ins realizados", str(dados.total_checkins)],
-        [
-            "Taxa de comparecimento",
-            f"{dados.taxa_comparecimento * 100:.1f}%",
-        ],
-        ["Receita bruta", f"R$ {dados.receita_bruta:,.2f}"],
-        ["Descontos de cupons", f"R$ {dados.desconto_cupons:,.2f}"],
-        ["Reembolsos", f"R$ {dados.valor_reembolsado:,.2f}"],
-        ["Receita líquida", f"R$ {dados.receita_liquida:,.2f}"],
+    def card(label: str, valor: str, cor: Color) -> list:
+        return [
+            Paragraph(label.upper(), card_label),
+            Spacer(1, 5),
+            Paragraph(f"<b>{valor}</b>", card_value(cor)),
+        ]
+
+    metricas = [
+        card("Ingressos vendidos", str(dados.total_ingressos), branding.ACCENT),
+        card("Check-ins realizados", str(dados.total_checkins), branding.TEXTO_LIGHT),
+        card("Taxa de comparecimento", f"{dados.taxa_comparecimento * 100:.1f}%", branding.GOLD_CLARO),
+        card("Receita bruta", f"R$ {dados.receita_bruta:,.2f}", branding.TEXTO_LIGHT),
+        card("Descontos de cupons", f"R$ {dados.desconto_cupons:,.2f}", branding.TEXTO_LIGHT),
+        card("Reembolsos", f"R$ {dados.valor_reembolsado:,.2f}", branding.TEXTO_LIGHT),
     ]
 
-    resumo_table = Table(resumo_data, colWidths=[10 * cm, 6 * cm])
-    resumo_table.setStyle(
+    largura_card = 7.7 * cm
+    gap = 0.4 * cm
+    grid_rows: list = []
+    estilo_cmds = [
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+        ("TOPPADDING", (0, 0), (-1, -1), 0),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+    ]
+    linha = 0
+    for i in range(0, len(metricas), 2):
+        esquerda = metricas[i]
+        direita = metricas[i + 1] if i + 1 < len(metricas) else ""
+        grid_rows.append([esquerda, "", direita])
+        # Cards = fundo do card; preenchimento interno simulado com padding.
+        for col in (0, 2):
+            estilo_cmds += [
+                ("BACKGROUND", (col, linha), (col, linha), branding.BG_CARD),
+                ("LEFTPADDING", (col, linha), (col, linha), 14),
+                ("RIGHTPADDING", (col, linha), (col, linha), 14),
+                ("TOPPADDING", (col, linha), (col, linha), 12),
+                ("BOTTOMPADDING", (col, linha), (col, linha), 12),
+                ("LINEBELOW", (col, linha), (col, linha), 2, branding.BG),
+                ("LINEABOVE", (col, linha), (col, linha), 2, branding.BG),
+            ]
+        linha += 1
+
+    grid = Table(grid_rows, colWidths=[largura_card, gap, largura_card])
+    grid.setStyle(TableStyle(estilo_cmds))
+    story.append(grid)
+    story.append(Spacer(1, 0.35 * cm))
+
+    # Card de destaque: receita líquida (largura total)
+    destaque = Table(
+        [
+            [
+                Paragraph("RECEITA LÍQUIDA", card_label),
+                Paragraph(
+                    f'<font size="22" color="{_hex(branding.ACCENT)}"><b>'
+                    f"R$ {dados.receita_liquida:,.2f}</b></font>",
+                    ParagraphStyle("Liq", parent=styles["Normal"], alignment=2),
+                ),
+            ]
+        ],
+        colWidths=[8 * cm, 7.8 * cm],
+    )
+    destaque.setStyle(
         TableStyle(
             [
-                ("BACKGROUND", (0, 0), (-1, 0), branding.VERDE),
-                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                ("FONTSIZE", (0, 0), (-1, 0), 10),
-                ("ALIGN", (0, 0), (-1, -1), "LEFT"),
-                ("ALIGN", (1, 0), (1, -1), "RIGHT"),
-                ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
-                ("FONTSIZE", (0, 1), (-1, -1), 10),
-                (
-                    "ROWBACKGROUNDS",
-                    (0, 1),
-                    (-1, -1),
-                    [colors.white, colors.HexColor("#f7fafc")],
-                ),
-                ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#e2e8f0")),
-                ("TOPPADDING", (0, 0), (-1, -1), 6),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-                ("LEFTPADDING", (0, 0), (-1, -1), 8),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 8),
-                # Destaque na linha de receita líquida
-                ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
-                ("BACKGROUND", (0, -1), (-1, -1), branding.VERDE_SOFT),
+                ("BACKGROUND", (0, 0), (-1, -1), branding.ACCENT_SOFT),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 16),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 16),
+                ("TOPPADDING", (0, 0), (-1, -1), 14),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 14),
+                ("LINEBELOW", (0, 0), (-1, -1), 1, branding.ACCENT),
             ]
         )
     )
-    story.append(resumo_table)
+    story.append(destaque)
 
-    # Detalhamento por lote
+    # Detalhamento por lote — tabela escura
     if dados.lotes:
-        story.append(Paragraph("Detalhamento por Lote", section_style))
+        story.append(Paragraph("Detalhamento por lote", section_style))
 
-        lote_header = [
-            "Lote",
-            "Tipo",
-            "Preço Unit.",
-            "Vendidos",
-            "Cortesias",
-            "Check-ins",
-            "Receita",
-        ]
-        lote_rows = [lote_header]
+        header = ["Lote", "Tipo", "Preço Unit.", "Vendidos", "Cortesias", "Check-ins", "Receita"]
+        linhas = [header]
         for lote in dados.lotes:
-            lote_rows.append(
+            linhas.append(
                 [
                     lote.nome,
                     lote.tipo,
@@ -199,40 +250,39 @@ def gerar_pdf_relatorio(dados: DadosRelatorio) -> BinaryIO:
                 ]
             )
 
-        col_widths = [4.5 * cm, 2.5 * cm, 2.5 * cm, 1.8 * cm, 2 * cm, 2 * cm, 2.7 * cm]
-        lote_table = Table(lote_rows, colWidths=col_widths)
-        lote_table.setStyle(
+        col_widths = [4.3 * cm, 2.3 * cm, 2.4 * cm, 1.8 * cm, 2 * cm, 2 * cm, 2.6 * cm]
+        tabela = Table(linhas, colWidths=col_widths)
+        tabela.setStyle(
             TableStyle(
                 [
                     ("BACKGROUND", (0, 0), (-1, 0), branding.VERDE),
-                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                    ("TEXTCOLOR", (0, 0), (-1, 0), branding.TEXTO_LIGHT),
                     ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
                     ("FONTSIZE", (0, 0), (-1, 0), 9),
                     ("ALIGN", (0, 0), (-1, -1), "CENTER"),
                     ("ALIGN", (0, 1), (1, -1), "LEFT"),
                     ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
                     ("FONTSIZE", (0, 1), (-1, -1), 9),
+                    ("TEXTCOLOR", (0, 1), (-1, -1), branding.TEXTO_LIGHT),
                     (
                         "ROWBACKGROUNDS",
                         (0, 1),
                         (-1, -1),
-                        [colors.white, colors.HexColor("#f7fafc")],
+                        [branding.BG_CARD, branding.BG_CARD_2],
                     ),
-                    ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#e2e8f0")),
-                    ("TOPPADDING", (0, 0), (-1, -1), 5),
-                    ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
-                    ("LEFTPADDING", (0, 0), (-1, -1), 6),
-                    ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                    ("LINEBELOW", (0, 0), (-1, -1), 0.5, branding.BORDA_DARK),
+                    ("TOPPADDING", (0, 0), (-1, -1), 7),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 8),
                 ]
             )
         )
-        story.append(lote_table)
+        story.append(tabela)
 
     # Rodapé
-    story.append(Spacer(1, 1 * cm))
-    story.append(
-        HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#e2e8f0"))
-    )
+    story.append(Spacer(1, 0.8 * cm))
+    story.append(HRFlowable(width="100%", thickness=0.5, color=branding.BORDA_DARK))
     story.append(Spacer(1, 0.2 * cm))
     story.append(
         Paragraph(
@@ -241,6 +291,10 @@ def gerar_pdf_relatorio(dados: DadosRelatorio) -> BinaryIO:
         )
     )
 
-    doc.build(story)
+    doc.build(
+        story,
+        onFirstPage=branding.pintar_fundo_dark,
+        onLaterPages=branding.pintar_fundo_dark,
+    )
     buffer.seek(0)
     return buffer

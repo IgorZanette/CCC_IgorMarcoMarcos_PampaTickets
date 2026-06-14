@@ -25,7 +25,31 @@ TEXTO_DIM = colors.HexColor("#6b7770")
 BORDA = colors.HexColor("#e5e7e2")
 BORDEAUX = colors.HexColor("#8b1e2a")
 
+# === Tema escuro (espelha [data-theme="dark"] do frontend — o visual usado
+# nos PDFs, para parecerem um "resumo do dashboard") ===
+BG = colors.HexColor("#0b0d0c")
+BG_CARD = colors.HexColor("#15181a")
+BG_CARD_2 = colors.HexColor("#1c2024")
+BORDA_DARK = colors.HexColor("#262b2f")
+TEXTO_LIGHT = colors.HexColor("#f5f6f7")
+TEXTO_DIM_DARK = colors.HexColor("#8a9199")
+ACCENT = colors.HexColor("#7eb86b")  # verde-pampa (accent no dark)
+ACCENT_SOFT = colors.HexColor("#1d2a1f")  # fundo verde bem escuro p/ realces
+
 _LOGO_PATH = Path(__file__).resolve().parent.parent / "static" / "logo.png"
+
+
+def pintar_fundo_dark(canvas, doc) -> None:
+    """Pinta a página inteira com o fundo escuro da plataforma.
+
+    Passado como onFirstPage/onLaterPages no build() — roda antes dos flowables,
+    ficando atrás do conteúdo.
+    """
+    canvas.saveState()
+    largura, altura = doc.pagesize
+    canvas.setFillColor(BG)
+    canvas.rect(0, 0, largura, altura, fill=1, stroke=0)
+    canvas.restoreState()
 
 
 def logo_flowable(width_cm: float = 3.5) -> RLImage | None:

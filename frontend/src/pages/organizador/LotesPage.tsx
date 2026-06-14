@@ -142,6 +142,7 @@ export const LotesPage = () => {
           onClose={() => setShowForm(false)}
           locked={submitting}
           labelledBy="novo-lote-titulo"
+          size="lg"
         >
           <h3 id="novo-lote-titulo" className={shared.cardTitle}>
             Novo lote

@@ -25,6 +25,7 @@ const TONE: Record<string, string> = {
   VENDENDO: "ok",
   "AO VIVO": "ok",
   ATIVO: "ok",
+  PRESENTE: "ok",
   PENDENTE: "warn",
   RASCUNHO: "warn",
   PASSADO: "neutral",

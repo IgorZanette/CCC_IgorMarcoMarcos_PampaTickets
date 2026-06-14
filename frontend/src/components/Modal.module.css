@@ -21,3 +21,7 @@
   padding: var(--pt-s-6);
   box-shadow: var(--pt-shadow-lg);
 }
+
+.card[data-size="lg"] {
+  max-width: 640px;
+}

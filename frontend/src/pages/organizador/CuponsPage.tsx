@@ -140,6 +140,7 @@ export const CuponsPage = () => {
           onClose={() => setShowForm(false)}
           locked={submitting}
           labelledBy="novo-cupom-titulo"
+          size="lg"
         >
           <h3 id="novo-cupom-titulo" className={shared.cardTitle}>
             Novo cupom

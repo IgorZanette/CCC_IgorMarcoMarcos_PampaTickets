@@ -123,6 +123,7 @@ export const CortesiasPage = () => {
           onClose={() => setShowForm(false)}
           locked={submitting}
           labelledBy="nova-cortesia-titulo"
+          size="lg"
         >
           <h3 id="nova-cortesia-titulo" className={shared.cardTitle}>
             Nova cortesia
