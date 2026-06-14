@@ -40,6 +40,7 @@ const ingresso = (overrides: Partial<Ingresso> = {}): Ingresso => ({
   qr_code_hash: "hash-1",
   status: "ATIVO",
   pdf_url: null,
+  certificado_url: null,
   emitido_em: "2026-06-01T00:00:00Z",
   evento_nome: "Festival do Pampa",
   // Evento futuro para cair na aba "Próximos eventos".
