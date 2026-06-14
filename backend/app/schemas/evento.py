@@ -22,6 +22,9 @@ class EventoCreate(BaseModel):
         max_length=500,
         examples=["Parque Farroupilha, Porto Alegre"],
     )
+    endereco_completo: str | None = Field(None, max_length=500)
+    latitude: float | None = Field(None, ge=-90, le=90)
+    longitude: float | None = Field(None, ge=-180, le=180)
 
     @model_validator(mode="after")
     def validar_periodo(self) -> "EventoCreate":
@@ -36,6 +39,9 @@ class EventoUpdate(BaseModel):
     data_inicio: DatetimeUTC | None = None
     data_fim: DatetimeUTC | None = None
     local: str | None = Field(None, min_length=3, max_length=500)
+    endereco_completo: str | None = Field(None, max_length=500)
+    latitude: float | None = Field(None, ge=-90, le=90)
+    longitude: float | None = Field(None, ge=-180, le=180)
 
     @model_validator(mode="after")
     def validar_periodo(self) -> "EventoUpdate":
@@ -56,6 +62,9 @@ class EventoResponse(BaseModel):
     data_inicio: datetime
     data_fim: datetime
     local: str
+    endereco_completo: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
     status: StatusEvento
     criado_em: datetime
 

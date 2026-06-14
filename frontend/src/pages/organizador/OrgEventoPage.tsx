@@ -12,10 +12,13 @@ import {
   type Evento,
   type RelatorioResumo,
 } from "../../api/eventos";
+import { AddressAutocomplete } from "../../components/AddressAutocomplete";
+import { EventMap } from "../../components/EventMap";
 import { MetricCard } from "../../components/MetricCard";
 import { PageHeader } from "../../components/PageHeader";
 import { StatusPill } from "../../components/StatusPill";
 import { extractErrorMessage } from "../../lib/errors";
+import { toastSuccess } from "../../lib/toast";
 import { dateLong, localToUtcIso, money, utcIsoToLocalInput } from "../../lib/format";
 import type { OrgOutlet } from "../../layouts/OrganizerLayout";
 
@@ -42,6 +45,9 @@ export const OrgEventoPage = () => {
     dataInicio: "",
     dataFim: "",
     local: "",
+    enderecoCompleto: null as string | null,
+    latitude: null as number | null,
+    longitude: null as number | null,
   });
 
   // Estado id-aware das métricas: carrega o id a que pertence, então a troca de evento
@@ -128,6 +134,9 @@ export const OrgEventoPage = () => {
       dataInicio: utcIsoToLocalInput(ev.data_inicio),
       dataFim: utcIsoToLocalInput(ev.data_fim),
       local: ev.local,
+      enderecoCompleto: ev.endereco_completo,
+      latitude: ev.latitude,
+      longitude: ev.longitude,
     });
     setEditError(null);
     setEditing(true);
@@ -144,9 +153,13 @@ export const OrgEventoPage = () => {
         data_inicio: localToUtcIso(dados.dataInicio),
         data_fim: localToUtcIso(dados.dataFim),
         local: dados.local,
+        endereco_completo: dados.enderecoCompleto,
+        latitude: dados.latitude,
+        longitude: dados.longitude,
       });
       setCurrent(atualizado);
       setEditing(false);
+      toastSuccess("Evento atualizado!");
     } catch (err) {
       setEditError(extractErrorMessage(err, "Falha ao salvar o evento."));
     } finally {
@@ -336,13 +349,30 @@ export const OrgEventoPage = () => {
 
             <div className={form.field}>
               <label className={form.fieldLabel}>Local *</label>
-              <input
-                className={form.input}
+              <AddressAutocomplete
                 value={dados.local}
-                onChange={(e) => setDados({ ...dados, local: e.target.value })}
+                onChange={(texto) =>
+                  setDados({
+                    ...dados,
+                    local: texto,
+                    latitude: null,
+                    longitude: null,
+                    enderecoCompleto: null,
+                  })
+                }
+                onSelect={(sel) =>
+                  setDados({
+                    ...dados,
+                    local: sel.local,
+                    enderecoCompleto: sel.endereco_completo,
+                    latitude: sel.latitude,
+                    longitude: sel.longitude,
+                  })
+                }
+                latitude={dados.latitude}
+                longitude={dados.longitude}
+                inputClassName={form.input}
                 required
-                minLength={3}
-                maxLength={500}
               />
             </div>
 
@@ -397,6 +427,11 @@ export const OrgEventoPage = () => {
                   <div className={styles.metaValue}>{ev.local}</div>
                 </div>
               </div>
+              {ev.latitude != null && ev.longitude != null && (
+                <div style={{ marginTop: 16 }}>
+                  <EventMap lat={ev.latitude} lon={ev.longitude} height={200} />
+                </div>
+              )}
               <div className={styles.descBlock}>
                 <div className={shared.eyebrow}>Descrição</div>
                 <p className={styles.desc}>

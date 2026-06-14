@@ -46,6 +46,9 @@ async def create(
     data_inicio: datetime,
     data_fim: datetime,
     local: str,
+    endereco_completo: str | None = None,
+    latitude: float | None = None,
+    longitude: float | None = None,
 ) -> Evento:
     evento = Evento(
         organizador_id=organizador_id,
@@ -54,6 +57,9 @@ async def create(
         data_inicio=data_inicio,
         data_fim=data_fim,
         local=local,
+        endereco_completo=endereco_completo,
+        latitude=latitude,
+        longitude=longitude,
     )
     db.add(evento)
     await db.commit()

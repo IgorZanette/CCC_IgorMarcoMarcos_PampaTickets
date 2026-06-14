@@ -23,6 +23,9 @@ async def criar(db: AsyncSession, organizador: Usuario, data: EventoCreate) -> E
         data_inicio=data.data_inicio,
         data_fim=data.data_fim,
         local=data.local,
+        endereco_completo=data.endereco_completo,
+        latitude=data.latitude,
+        longitude=data.longitude,
     )
 
 

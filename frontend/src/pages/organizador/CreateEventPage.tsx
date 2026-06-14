@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { criarEvento, gradientFor, type Evento } from "../../api/eventos";
+import { AddressAutocomplete } from "../../components/AddressAutocomplete";
 import { PageHeader } from "../../components/PageHeader";
 import { localToUtcIso } from "../../lib/format";
 import { toastError, toastSuccess } from "../../lib/toast";
@@ -16,6 +17,9 @@ export const CreateEventPage = () => {
   const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");
   const [local, setLocal] = useState("");
+  const [enderecoCompleto, setEnderecoCompleto] = useState<string | null>(null);
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const previewId = nome || "preview";
@@ -30,6 +34,9 @@ export const CreateEventPage = () => {
         data_inicio: localToUtcIso(dataInicio),
         data_fim: localToUtcIso(dataFim),
         local,
+        endereco_completo: enderecoCompleto,
+        latitude,
+        longitude,
       });
       toastSuccess("Evento criado como rascunho!");
       navigate(`/organizador/eventos/${novo.id}`);
@@ -109,14 +116,26 @@ export const CreateEventPage = () => {
             </div>
 
             <Field label="Local *">
-              <input
-                className={styles.input}
+              <AddressAutocomplete
                 value={local}
-                onChange={(e) => setLocal(e.target.value)}
+                onChange={(texto) => {
+                  setLocal(texto);
+                  // Texto editado à mão invalida as coordenadas anteriores.
+                  setLatitude(null);
+                  setLongitude(null);
+                  setEnderecoCompleto(null);
+                }}
+                onSelect={(sel) => {
+                  setLocal(sel.local);
+                  setEnderecoCompleto(sel.endereco_completo);
+                  setLatitude(sel.latitude);
+                  setLongitude(sel.longitude);
+                }}
+                latitude={latitude}
+                longitude={longitude}
+                inputClassName={styles.input}
                 placeholder="Parque Farroupilha, Porto Alegre, RS"
                 required
-                minLength={3}
-                maxLength={500}
               />
             </Field>
 

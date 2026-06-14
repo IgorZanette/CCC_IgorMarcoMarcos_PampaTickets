@@ -15,6 +15,9 @@ export type Evento = {
   data_inicio: string;
   data_fim: string;
   local: string;
+  endereco_completo: string | null;
+  latitude: number | null;
+  longitude: number | null;
   status: StatusEvento;
   criado_em: string;
 };
@@ -25,6 +28,9 @@ export type EventoCreate = {
   data_inicio: string;
   data_fim: string;
   local: string;
+  endereco_completo?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 };
 
 export type EventoUpdate = Partial<EventoCreate>;

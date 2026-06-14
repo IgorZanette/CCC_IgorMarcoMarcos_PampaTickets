@@ -9,6 +9,7 @@ import {
 } from "../../api/eventos";
 import { listarLotes, type Lote } from "../../api/lotes";
 import { validarCupom, type CupomValidacao } from "../../api/cupons";
+import { EventMap } from "../../components/EventMap";
 import { useCurrentUser } from "../../lib/auth-store";
 import { extractErrorMessage } from "../../lib/errors";
 import { dateFull, dateShort, money } from "../../lib/format";
@@ -148,6 +149,32 @@ export const EventoPage = () => {
         <div>
           <h2 className={styles.heading}>Sobre o evento</h2>
           <p className={styles.lead}>{ev.descricao ?? "Sem descrição cadastrada."}</p>
+
+          {ev.latitude != null && ev.longitude != null && (
+            <>
+              <h2 className={styles.heading} style={{ marginTop: 24 }}>
+                Como chegar
+              </h2>
+              <p className={styles.lead} style={{ marginBottom: 12 }}>
+                📍 {ev.endereco_completo ?? ev.local}
+              </p>
+              <EventMap lat={ev.latitude} lon={ev.longitude} height={260} />
+              <a
+                href={`https://www.openstreetmap.org/?mlat=${ev.latitude}&mlon=${ev.longitude}#map=16/${ev.latitude}/${ev.longitude}`}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  display: "inline-block",
+                  marginTop: 8,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "var(--pt-accent)",
+                }}
+              >
+                Abrir no mapa ↗
+              </a>
+            </>
+          )}
 
           <h2 className={styles.heading} style={{ marginTop: 24 }}>
             Selecione seus ingressos
