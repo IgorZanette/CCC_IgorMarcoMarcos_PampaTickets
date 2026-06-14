@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { logout } from "../../api/auth";
@@ -7,10 +7,13 @@ import {
   type Ingresso,
 } from "../../api/ingressos";
 import { reembolsarPedido } from "../../api/pedidos";
+import { Modal } from "../../components/Modal";
+import { SkeletonGrid } from "../../components/Skeleton";
 import { StatusPill } from "../../components/StatusPill";
 import { initials, useCurrentUser } from "../../lib/auth-store";
 import { extractErrorMessage } from "../../lib/errors";
 import { dateFull } from "../../lib/format";
+import { toastError, toastSuccess } from "../../lib/toast";
 
 import styles from "./MyTicketsPage.module.css";
 
@@ -143,7 +146,7 @@ export const MyTicketsPage = () => {
         ) : error ? (
           <div className={styles.empty}>{error}</div>
         ) : ingressos === null ? (
-          <div className={styles.empty}>Carregando seus ingressos…</div>
+          <SkeletonGrid count={3} />
         ) : list.length === 0 ? (
           <div className={styles.empty}>
             Nenhum item nessa aba ainda. Que tal{" "}
@@ -175,16 +178,14 @@ export const MyTicketsPage = () => {
         )}
       </div>
 
-      {reembolsoAlvo && (
-        <ReembolsoModal
-          ing={reembolsoAlvo}
-          onClose={() => setReembolsoAlvo(null)}
-          onSuccess={(pedidoId) => {
-            setPedidosReembolsados((prev) => new Set(prev).add(pedidoId));
-            setReembolsoAlvo(null);
-          }}
-        />
-      )}
+      <ReembolsoModal
+        ing={reembolsoAlvo}
+        onClose={() => setReembolsoAlvo(null)}
+        onSuccess={(pedidoId) => {
+          setPedidosReembolsados((prev) => new Set(prev).add(pedidoId));
+          setReembolsoAlvo(null);
+        }}
+      />
     </div>
   );
 };
@@ -265,119 +266,82 @@ const ReembolsoModal = ({
   onClose,
   onSuccess,
 }: {
-  ing: Ingresso;
+  ing: Ingresso | null;
   onClose: () => void;
   onSuccess: (pedidoId: string) => void;
 }) => {
   const [motivo, setMotivo] = useState("");
   const [enviando, setEnviando] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
-  const dialogRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      // Não fecha durante o envio: desmontar o modal com a requisição em voo
-      // engoliria um eventual erro sem nenhum aviso ao usuário.
-      if (e.key === "Escape") {
-        if (!enviando) onClose();
-        return;
-      }
-      // Focus trap: mantém o Tab circulando dentro do dialog.
-      if (e.key !== "Tab" || !dialogRef.current) return;
-      const focusables = dialogRef.current.querySelectorAll<HTMLElement>(
-        "button:not([disabled]), textarea:not([disabled])",
-      );
-      if (focusables.length === 0) return;
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      const active = document.activeElement;
-      const dentro = dialogRef.current.contains(active);
-      if (e.shiftKey && (active === first || !dentro)) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && (active === last || !dentro)) {
-        e.preventDefault();
-        first.focus();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onClose, enviando]);
+  // Zera o motivo a cada novo alvo (padrão de ajuste durante o render), para
+  // não vazar texto entre aberturas — o modal segue montado para animar a saída.
+  const [alvoAnterior, setAlvoAnterior] = useState(ing?.id);
+  if (ing?.id !== alvoAnterior) {
+    setAlvoAnterior(ing?.id);
+    setMotivo("");
+  }
 
   const confirmar = async () => {
-    if (!ing.pedido_id || enviando) return;
+    if (!ing?.pedido_id || enviando) return;
     setEnviando(true);
-    setErro(null);
     try {
       await reembolsarPedido(ing.pedido_id, { motivo: motivo.trim() || null });
+      toastSuccess("Reembolso solicitado! Aguarde a confirmação do estorno.");
       onSuccess(ing.pedido_id);
     } catch (err) {
-      setErro(
-        extractErrorMessage(err, "Não foi possível solicitar o reembolso."),
-      );
+      toastError(err, "Não foi possível solicitar o reembolso.");
     } finally {
       setEnviando(false);
     }
   };
 
   return (
-    <div
-      className={styles.modalOverlay}
-      role="presentation"
-      onClick={() => {
-        if (!enviando) onClose();
-      }}
+    <Modal
+      open={ing !== null}
+      onClose={onClose}
+      locked={enviando}
+      labelledBy="reembolso-titulo"
     >
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="reembolso-titulo"
-        className={styles.modal}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 id="reembolso-titulo" className={styles.modalTitle}>
-          Solicitar reembolso
-        </h2>
-        <p className={styles.modalText}>
-          O reembolso vale para o <strong>pedido inteiro</strong>: todos os
-          ingressos comprados juntos para <strong>{ing.evento_nome}</strong>{" "}
-          serão cancelados e o valor devolvido pelo mesmo meio de pagamento.
-          Essa ação não pode ser desfeita.
-        </p>
-        <label className={styles.modalLabel} htmlFor="reembolso-motivo">
-          Motivo (opcional)
-        </label>
-        <textarea
-          id="reembolso-motivo"
-          className={styles.modalTextarea}
-          value={motivo}
-          onChange={(e) => setMotivo(e.target.value)}
-          maxLength={500}
-          placeholder="Conte para o organizador por que está pedindo o reembolso"
+      <h2 id="reembolso-titulo" className={styles.modalTitle}>
+        Solicitar reembolso
+      </h2>
+      <p className={styles.modalText}>
+        O reembolso vale para o <strong>pedido inteiro</strong>: todos os
+        ingressos comprados juntos para <strong>{ing?.evento_nome}</strong>{" "}
+        serão cancelados e o valor devolvido pelo mesmo meio de pagamento. Essa
+        ação não pode ser desfeita.
+      </p>
+      <label className={styles.modalLabel} htmlFor="reembolso-motivo">
+        Motivo (opcional)
+      </label>
+      <textarea
+        id="reembolso-motivo"
+        className={styles.modalTextarea}
+        value={motivo}
+        onChange={(e) => setMotivo(e.target.value)}
+        maxLength={500}
+        placeholder="Conte para o organizador por que está pedindo o reembolso"
+        disabled={enviando}
+        autoFocus
+      />
+      <div className={styles.modalActions}>
+        <button
+          type="button"
+          className={styles.secondary}
+          onClick={onClose}
           disabled={enviando}
-          autoFocus
-        />
-        {erro && <div className={styles.modalErro}>⚠ {erro}</div>}
-        <div className={styles.modalActions}>
-          <button
-            type="button"
-            className={styles.secondary}
-            onClick={onClose}
-            disabled={enviando}
-          >
-            Voltar
-          </button>
-          <button
-            type="button"
-            className={styles.modalConfirm}
-            onClick={confirmar}
-            disabled={enviando}
-          >
-            {enviando ? "Enviando…" : "Confirmar reembolso"}
-          </button>
-        </div>
+        >
+          Voltar
+        </button>
+        <button
+          type="button"
+          className={styles.modalConfirm}
+          onClick={confirmar}
+          disabled={enviando}
+        >
+          {enviando ? "Enviando…" : "Confirmar reembolso"}
+        </button>
       </div>
-    </div>
+    </Modal>
   );
 };

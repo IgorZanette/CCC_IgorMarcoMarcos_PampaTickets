@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
+import { Toaster } from "sonner";
 
 import { me } from "./api/auth";
 import { getToken } from "./api/client";
@@ -43,7 +44,14 @@ export const App = () => {
   }, []);
 
   return (
-    <Routes>
+    <>
+      <Toaster
+        position="bottom-right"
+        richColors
+        closeButton
+        toastOptions={{ style: { fontFamily: "var(--pt-font-sans)" } }}
+      />
+      <Routes>
       {/* Públicas + auth (sem layout de persona) */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
@@ -88,6 +96,7 @@ export const App = () => {
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+    </>
   );
 };

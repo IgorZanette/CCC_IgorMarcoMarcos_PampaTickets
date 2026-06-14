@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { Logo } from "../components/Logo";
+import { PageTransition } from "../components/PageTransition";
 import { firstName, initials, useCurrentUser } from "../lib/auth-store";
 import styles from "./ParticipantLayout.module.css";
 
@@ -75,7 +76,9 @@ export const ParticipantLayout = () => {
       </header>
 
       <main className={styles.main}>
-        <Outlet />
+        <PageTransition key={location.pathname}>
+          <Outlet />
+        </PageTransition>
       </main>
     </div>
   );

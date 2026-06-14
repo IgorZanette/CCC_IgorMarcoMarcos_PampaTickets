@@ -1,8 +1,9 @@
-import { NavLink, Outlet, useMatch, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useMatch, useNavigate } from "react-router-dom";
 
 import { logout } from "../api/auth";
 import { type Evento } from "../api/eventos";
 import { Logo } from "../components/Logo";
+import { PageTransition } from "../components/PageTransition";
 import { StatusPill } from "../components/StatusPill";
 import { useEvento } from "../lib/active-event";
 import { initials, useCurrentUser } from "../lib/auth-store";
@@ -29,6 +30,7 @@ const eventNavItems = (id: string) => [
 export const OrganizerLayout = () => {
   const user = useCurrentUser();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // O id do evento ativo vem da URL (não de localStorage). useParams no layout-pai
   // não enxerga o :id das rotas filhas; useMatch enxerga.
@@ -111,7 +113,9 @@ export const OrganizerLayout = () => {
       </aside>
 
       <main className={styles.main}>
-        <Outlet context={{ evento, loading, error } satisfies OrgOutlet} />
+        <PageTransition key={location.pathname}>
+          <Outlet context={{ evento, loading, error } satisfies OrgOutlet} />
+        </PageTransition>
       </main>
     </div>
   );

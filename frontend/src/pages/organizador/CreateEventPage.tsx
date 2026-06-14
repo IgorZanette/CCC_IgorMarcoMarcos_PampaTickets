@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 
 import { criarEvento, gradientFor, type Evento } from "../../api/eventos";
 import { PageHeader } from "../../components/PageHeader";
-import { extractErrorMessage } from "../../lib/errors";
 import { localToUtcIso } from "../../lib/format";
+import { toastError, toastSuccess } from "../../lib/toast";
 
 import shared from "./shared.module.css";
 import styles from "./CreateEventPage.module.css";
@@ -17,14 +17,12 @@ export const CreateEventPage = () => {
   const [dataFim, setDataFim] = useState("");
   const [local, setLocal] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const previewId = nome || "preview";
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    setError(null);
     try {
       const novo: Evento = await criarEvento({
         nome,
@@ -33,9 +31,10 @@ export const CreateEventPage = () => {
         data_fim: localToUtcIso(dataFim),
         local,
       });
+      toastSuccess("Evento criado como rascunho!");
       navigate(`/organizador/eventos/${novo.id}`);
     } catch (err) {
-      setError(extractErrorMessage(err, "Falha ao criar o evento."));
+      toastError(err, "Falha ao criar o evento.");
     } finally {
       setSubmitting(false);
     }
@@ -120,21 +119,6 @@ export const CreateEventPage = () => {
                 maxLength={500}
               />
             </Field>
-
-            {error && (
-              <div
-                style={{
-                  marginTop: 12,
-                  padding: "10px 12px",
-                  background: "rgba(200, 16, 46, 0.08)",
-                  color: "#c8102e",
-                  borderRadius: 6,
-                  fontSize: 13,
-                }}
-              >
-                ⚠ {error}
-              </div>
-            )}
 
             <div className={styles.formActions}>
               <button

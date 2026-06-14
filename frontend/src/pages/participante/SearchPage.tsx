@@ -7,6 +7,7 @@ import {
   listarEventos,
   type Evento,
 } from "../../api/eventos";
+import { SkeletonGrid } from "../../components/Skeleton";
 import { extractErrorMessage } from "../../lib/errors";
 import { dateFull } from "../../lib/format";
 
@@ -132,7 +133,7 @@ export const SearchPage = () => {
             {error ? (
               <div className={styles.empty}>{error}</div>
             ) : events === null ? (
-              <div className={styles.empty}>Carregando eventos…</div>
+              <SkeletonGrid count={6} />
             ) : filtered.length === 0 ? (
               <div className={styles.empty}>
                 Nenhum evento encontrado com esses filtros.

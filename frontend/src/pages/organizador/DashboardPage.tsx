@@ -7,6 +7,7 @@ import {
   type Evento,
 } from "../../api/eventos";
 import { PageHeader } from "../../components/PageHeader";
+import { SkeletonGrid } from "../../components/Skeleton";
 import { StatusPill } from "../../components/StatusPill";
 import { firstName, useCurrentUser } from "../../lib/auth-store";
 import { extractErrorMessage } from "../../lib/errors";
@@ -70,7 +71,9 @@ export const DashboardPage = () => {
 
           {error && <div className={styles.empty}>{error}</div>}
           {!error && eventos === null && (
-            <div className={styles.empty}>Carregando seus eventos…</div>
+            <div className={styles.eventGrid}>
+              <SkeletonGrid count={3} />
+            </div>
           )}
           {!error && eventos?.length === 0 && (
             <div className={styles.empty}>

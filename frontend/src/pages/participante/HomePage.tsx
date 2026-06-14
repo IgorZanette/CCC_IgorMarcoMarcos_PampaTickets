@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 import { gradientFor, listarEventos, type Evento } from "../../api/eventos";
 import { EventCard } from "../../components/EventCard";
+import { Skeleton } from "../../components/Skeleton";
 import { extractErrorMessage } from "../../lib/errors";
 import { dateLong } from "../../lib/format";
 
@@ -38,7 +39,7 @@ export const HomePage = () => {
   if (events === null) {
     return (
       <section className={styles.heroSection}>
-        <div className={styles.empty}>Carregando eventos…</div>
+        <Skeleton height={280} radius="var(--pt-r-2xl)" />
       </section>
     );
   }

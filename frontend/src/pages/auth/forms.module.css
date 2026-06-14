@@ -22,7 +22,8 @@
   color: var(--pt-text);
   font-size: 14px;
   outline: none;
-  transition: border-color var(--pt-t-fast);
+  transition: border-color var(--pt-t-fast), box-shadow var(--pt-t-fast),
+    background var(--pt-t-fast);
   box-sizing: border-box;
 }
 
@@ -31,8 +32,33 @@
   background: var(--pt-bg-card);
 }
 
+.input:hover:not(:disabled):not(:focus),
+.select:hover:not(:disabled):not(:focus) {
+  border-color: var(--pt-text-dim);
+}
+
 .input:focus,
 .select:focus {
+  border-color: var(--pt-accent);
+  box-shadow: 0 0 0 3px var(--pt-accent-soft);
+}
+
+.input:disabled,
+.select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Estados semânticos — aplicar data-state="error" | "success" no input. */
+.input[data-state="error"] {
+  border-color: var(--pt-danger);
+}
+
+.input[data-state="error"]:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pt-danger) 18%, transparent);
+}
+
+.input[data-state="success"] {
   border-color: var(--pt-accent);
 }
 

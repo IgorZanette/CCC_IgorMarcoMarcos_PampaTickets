@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { confirmarEmail, login, reenviarConfirmacao } from "../../api/auth";
-import { extractErrorMessage } from "../../lib/errors";
+import { toastError, toastSuccess } from "../../lib/toast";
 import { AuthShell } from "./AuthShell";
 import forms from "./forms.module.css";
 
@@ -18,8 +18,6 @@ export const ConfirmarEmailPage = () => {
   const [codigo, setCodigo] = useState("");
   const [loading, setLoading] = useState(false);
   const [reenvioLoading, setReenvioLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [reenvioMsg, setReenvioMsg] = useState<string | null>(null);
 
   if (!email) {
     navigate("/cadastro");
@@ -28,28 +26,26 @@ export const ConfirmarEmailPage = () => {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     setLoading(true);
     try {
       await confirmarEmail({ email, codigo });
       const usuario = await login({ email, senha });
+      toastSuccess("Conta confirmada! Bem-vindo ao PampaTickets 🎉");
       navigate(usuario.perfil === "ORGANIZADOR" ? "/organizador" : "/inicio");
     } catch (err: unknown) {
-      setError(extractErrorMessage(err, "Código inválido ou expirado."));
+      toastError(err, "Código inválido ou expirado.");
     } finally {
       setLoading(false);
     }
   };
 
   const reenviar = async () => {
-    setReenvioMsg(null);
-    setError(null);
     setReenvioLoading(true);
     try {
       await reenviarConfirmacao({ email });
-      setReenvioMsg("Novo código enviado! Verifique sua caixa de entrada.");
+      toastSuccess("Novo código enviado! Verifique sua caixa de entrada.");
     } catch (err: unknown) {
-      setError(extractErrorMessage(err, "Não foi possível reenviar o código."));
+      toastError(err, "Não foi possível reenviar o código.");
     } finally {
       setReenvioLoading(false);
     }
@@ -103,13 +99,6 @@ export const ConfirmarEmailPage = () => {
             style={{ textAlign: "center", fontSize: 24, letterSpacing: 8, fontWeight: 600 }}
           />
         </div>
-
-        {reenvioMsg && (
-          <div style={{ color: "var(--pt-accent)", fontSize: 13, textAlign: "center" }}>
-            {reenvioMsg}
-          </div>
-        )}
-        {error && <div className={forms.error}>⚠ {error}</div>}
 
         <button type="submit" className={forms.primary} disabled={loading || codigo.length < 6}>
           {loading ? "Confirmando…" : "Confirmar e entrar →"}
