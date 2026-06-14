@@ -121,4 +121,4 @@ async def criar_cobranca_pedido(db, usuario, pedido):
 | UC13 | Gerar Certificado PDF | Alta |
 | UC14 | Gerar Relatório Financeiro PDF | Média |
 | UC15 | Notificar via WhatsApp | Média |
-| UC08 | Galeria de Fotos | Baixa — implementar por último |
+| UC08 | Galeria de Fotos | Baixa — implementado (v1 grátis; visualização exige login) |

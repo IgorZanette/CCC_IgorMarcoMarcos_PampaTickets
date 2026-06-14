@@ -8,6 +8,15 @@
 ## Última atualização
 
 **Data:** 14/06/2026
+**Responsável:** Marco Antonio Santolin (UC08 — Galeria de Fotos, v1 grátis)
+
+> **UC08 — Galeria de Fotos (14/06/2026)** — último UC entregue, espelhando o padrão repo→service→route de cortesias. **Decisão**: galeria **grátis** (`preco=0`; `CompraFoto` reservado p/ fase paga) e **visualização exige login** (diverge do plano original, que previa público) — por isso o bucket `fotos` é **privado** e a listagem devolve **URLs assinadas** (`criar_signed_url`), não públicas. Backend: [foto_repo.py](../app/repositories/foto_repo.py), [foto_service.py](../app/service/foto_service.py) (valida posse/tipo 422/tamanho 413), [schemas/foto.py](../app/schemas/foto.py), [routes/fotos.py](../app/api/routes/fotos.py) (`POST` organizador com upload múltiplo, `GET` login, `DELETE` dono); 3 settings em `config.py` (`SUPABASE_BUCKET_FOTOS`, `MAX_FOTO_SIZE_MB`, `ALLOWED_FOTO_TYPES`) e 3 métodos no `supabase_storage` (`upload_foto_evento`, `criar_signed_url`, `remover_foto`). Sem migration (tabelas já existiam); sem Pillow (thumbnail = original). **156 testes** (7 novos em `test_foto_service.py`, storage mockado). **Pendência de deploy**: criar o bucket privado `fotos` no Supabase. Frontend: `OrgFotosPage` (item "Galeria" no `EVENT_NAV`) + seção na `EventoPage` (grid p/ logados, aviso de login p/ deslogados). Também corrigidos 2 testes de reembolso do frontend que estavam vermelhos no CI desde o refactor de UX (Modal animado + erro via toast) — pré-existentes, não-UC08.
+
+---
+
+## Última atualização (anterior)
+
+**Data:** 14/06/2026
 **Responsável:** Marco Antonio Santolin (certificado PDF redesenhado + `certificado_url` no endpoint de ingressos)
 
 > **Certificado PDF redesenhado (14/06/2026)** — `gerar_pdf_certificado` em [app/reports/ingresso_pdf.py](../app/reports/ingresso_pdf.py) completamente reescrita: orientação **paisagem** (`landscape(A4)`), **tema claro** (fundo creme `#fffef8` via `pintar_fundo_certificado`) com **borda dupla decorativa** (verde pampa 3pt externo + dourado 1pt interno). Paleta exclusiva `CERT_*` adicionada em [app/reports/branding.py](../app/reports/branding.py) (`CERT_BG`, `CERT_BORDA_EXT`, `CERT_BORDA_INT`, `CERT_TEXTO`, `CERT_TEXTO_DIM`). Layout: logo pequeno + divisor dourado + "CERTIFICADO / DE PARTICIPAÇÃO" + nome do participante em 30pt em destaque + descrição do evento + assinatura. Visual agora é claramente distinto do ingresso (escuro/retrato).
@@ -53,7 +62,7 @@
 - [x] UC14 — Relatório Financeiro PDF (download em PDF + resumo em JSON)
 - [x] **Recuperação de Senha** — Email com código de 6 dígitos (novo)
 - [~] UC15 — Notificações WhatsApp (draft estrutural: 3 gatilhos event-driven prontos e testados com a Meta mockada; falta credenciais reais + templates aprovados + gatilho "véspera")
-- [ ] UC08 — Galeria de Fotos (baixa prioridade)
+- [x] UC08 — Galeria de Fotos (v1 grátis; visualização exige login — bucket privado + URL assinada)
 
 Endpoints extras (fora dos UCs originais):
 - [x] `GET /api/organizador/eventos/{id}/ingressos` — listagem de ingressos vendidos por evento (painel do organizador)
@@ -109,7 +118,7 @@ Nada em aberto. Recuperação de senha entregue e testável.
 2. **UC15 — Notificações WhatsApp**: criar `app/integrations/whatsapp/` (Meta Cloud API) e disparar em pagamento confirmado, check-in realizado, véspera do evento e cancelamento de evento.
 3. **Validar UC10 em sandbox**: rodar o roteiro de smoke (POST /api/pedidos/{id}/reembolso) e confirmar que webhook PAYMENT_REFUNDED cancela ingressos — pendência arrastada desde 11/05.
 4. **Tratar as ressalvas da PR `ad83d78`** (ver lista de dívida técnica): estorno de cupom em pedido pago e atomicidade da cascata de cancelamento de evento.
-5. **UC08 — Galeria de Fotos** (último UC pendente): plano de implementação já registrado em [roadmap.md](roadmap.md#uc08--galeria-de-fotos-plano-ainda-não-implementado) — v1 grátis, upload pelo organizador, sem perfil FOTOGRAFO, sem processamento de imagem. Ainda não iniciado.
+5. ~~**UC08 — Galeria de Fotos**~~ entregue em 14/06/2026 (v1 grátis). **Pendência de deploy**: criar o bucket privado `fotos` no Supabase (sem ele o `POST` de fotos retorna 503).
 
 > Reembolso em massa por cancelamento de evento e suíte de testes foram entregues no merge `ad83d78` (04/06/2026).
 
@@ -197,7 +206,7 @@ Nada em aberto. Recuperação de senha entregue e testável.
 - ~~**Logs estruturados**~~ resolvido: loguru + `LoggingMiddleware` loga cada request. ~~Tratamento global de exceções~~ também resolvido em 11/05/2026 via `@app.exception_handler(Exception)` em `main.py`.
 - **CORS em produção**: middleware habilitado, mas as origens precisam ser revistas antes de qualquer deploy.
 - **Seed de dados** para desenvolvimento: descartada em 24/05/2026 — usuários de teste são criados manualmente via `POST /api/auth/cadastro`.
-- **Modelos sem rotas restantes**: `FotoEvento`/`CompraFoto` (UC08) — modelos ORM existem mas faltam repositório/service/rotas. ~~`Cupom` (UC05)~~ e ~~`Cortesia` (UC06)~~ resolvidos em 24/05/2026. ~~`Relatorio` (UC14)~~ — UC14 entregue em 30/05/2026 **sem** persistir o model `Relatorio` (relatório é regenerado sob demanda, não salvo); a tabela existe mas segue sem uso, candidata a virar log de auditoria ou ser removida.
+- **Modelos sem rotas restantes**: ~~`FotoEvento` (UC08)~~ resolvido em 14/06/2026 (galeria v1). `CompraFoto` segue sem uso, reservado para a fase paga da galeria (como o `Relatorio` no UC14). ~~`Cupom` (UC05)~~ e ~~`Cortesia` (UC06)~~ resolvidos em 24/05/2026. ~~`Relatorio` (UC14)~~ — UC14 entregue em 30/05/2026 **sem** persistir o model `Relatorio` (relatório é regenerado sob demanda, não salvo); a tabela existe mas segue sem uso, candidata a virar log de auditoria ou ser removida.
 - **UC15 não iniciado**: integração com Meta Cloud API (WhatsApp) precisa ser criada do zero em `app/integrations/whatsapp/`. (11/06/2026 — Marco) Removida a config comentada `META_WHATSAPP_TOKEN`/`META_PHONE_NUMBER_ID`/`META_VERIFY_TOKEN` de `core/config.py` — era placeholder morto; reintroduzir junto da implementação da integração.
 - ~~**`PAYMENT_REFUNDED` não cancela ingressos**~~ resolvido no UC10: agora cancela todos os ingressos do pedido reembolsado.
 - ~~**`gerar_pdf_ingresso_upload` engole exceções silenciosamente**~~ resolvido em 11/05/2026: aplicado em todos os call sites (`gerar_pdf_ingresso_upload`, `gerar_pdf_certificado_upload`, `validar_checkin`, `_gerar_pdfs_ingressos`) via `logger.exception`.

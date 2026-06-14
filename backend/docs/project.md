@@ -30,7 +30,7 @@ Este repositório contém o **backend principal**, responsável por toda a lógi
 
 ## Estrutura de Pastas
 
-> Este documento lista **apenas o que existe hoje no código**. UCs ainda não implementados (UC08/15) não estão na árvore — veja `roadmap.md` e `state.md` para o que está pendente.
+> Este documento lista **apenas o que existe hoje no código**. O UC15 (WhatsApp) ainda não está totalmente implementado — veja `roadmap.md` e `state.md` para o que está pendente.
 
 ```
 backend/
@@ -46,6 +46,7 @@ backend/
 │   │       ├── cortesias.py              # UC06 — emitir/listar/obter/cancelar cortesia
 │   │       ├── cupons.py                 # UC05 — CRUD + validar (preview do desconto)
 │   │       ├── eventos.py                # UC02 — CRUD + publicar/encerrar/cancelar
+│   │       ├── fotos.py                  # UC08 — galeria: publicar (organizador), listar (login), excluir
 │   │       ├── ingressos.py              # ingressos do participante (/meus, /{id}) + listagem por evento do organizador
 │   │       ├── lotes.py                  # UC03 — CRUD + ativar/desativar
 │   │       ├── pedidos.py                # UC07 — criar, listar, detalhe, cancelar, reembolso
@@ -63,10 +64,10 @@ backend/
 │   │   ├── asaas/
 │   │   │   ├── client.py                 # httpx.AsyncClient singleton + auth/timeout
 │   │   │   ├── customers.py              # create_customer
-│   │   │   ├── charges.py                # create_charge, delete_charge, refund_charge, get_pix_qrcode
+│   │   │   ├── charges.py                # create_charge, delete_charge, refund_charge, get_pix_qrcode, get_boleto_identificacao
 │   │   │   └── exceptions.py             # AsaasAPIError
 │   │   └── supabase/
-│   │       └── supabase_storage.py       # SupabaseStorage — upload de PDFs
+│   │       └── supabase_storage.py       # SupabaseStorage — upload de PDFs + fotos (UC08: upload/URL assinada/remover)
 │   ├── models/
 │   │   ├── usuario.py
 │   │   ├── evento.py
@@ -79,7 +80,7 @@ backend/
 │   │   ├── checkin.py
 │   │   ├── certificado.py
 │   │   ├── relatorio.py                  # modelo só — UC14 NÃO persiste (relatório é regenerado sob demanda)
-│   │   └── foto.py                       # FotoEvento + CompraFoto (UC08 sem rotas)
+│   │   └── foto.py                       # FotoEvento (UC08) + CompraFoto (reservado p/ fase paga, sem uso)
 │   ├── repositories/
 │   │   ├── usuario_repo.py
 │   │   ├── evento_repo.py
@@ -90,6 +91,7 @@ backend/
 │   │   ├── ingresso_repo.py
 │   │   ├── cupom_repo.py                 # UC05
 │   │   ├── cortesia_repo.py              # UC06
+│   │   ├── foto_repo.py                  # UC08 — CRUD da galeria de fotos
 │   │   ├── checkin_repo.py               # UC04 — persiste linha em checkins
 │   │   └── certificado_repo.py           # UC13 — persiste linha em certificados
 │   ├── reports/
@@ -106,6 +108,7 @@ backend/
 │   │   ├── checkin.py                    # CheckinRequest (body) + CheckinResponse
 │   │   ├── cupom.py                      # Create/Update/Response + ValidarRequest/Response
 │   │   ├── cortesia.py                   # Create + Response (desnormaliza email/nome/lote)
+│   │   ├── foto.py                       # UC08 — FotoResponse (URLs assinadas geradas no service)
 │   │   └── relatorio.py                  # UC14 — RelatorioResumoResponse.from_dados (resumo JSON do dashboard)
 │   ├── service/
 │   │   ├── auth_service.py               # JWT + bcrypt
@@ -117,6 +120,7 @@ backend/
 │   │   ├── ingresso_service.py           # criar_ingressos_para_pedido + PDFs + validar_checkin (auth)
 │   │   ├── cupom_service.py              # UC05 — CRUD + validar_e_calcular_desconto
 │   │   ├── cortesia_service.py           # UC06 — emitir/listar/obter/cancelar (atômico)
+│   │   ├── foto_service.py               # UC08 — publicar (valida posse/tipo/tamanho) / listar / excluir
 │   │   └── relatorio_service.py          # UC14 — montar_dados (5 queries) + gerar_relatorio (PDF)
 │   └── main.py
 ├── docs/                                 # project.md, requirements.md, roadmap.md, state.md
@@ -157,6 +161,7 @@ SUPABASE_KEY=sua-service-role-key
 SUPABASE_BUCKET_INGRESSOS=ingressos
 SUPABASE_BUCKET_CERTIFICADOS=certificados
 SUPABASE_BUCKET_RELATORIOS=relatorios
+SUPABASE_BUCKET_FOTOS=fotos   # UC08 — criar como bucket PRIVADO (acesso via URL assinada)
 
 # Meta Cloud API — WhatsApp Business (UC15, ainda não implementado)
 # META_WHATSAPP_TOKEN=seu-token-de-acesso
