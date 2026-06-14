@@ -7,9 +7,14 @@
 
 ## Última atualização
 
-**Data:** 11/06/2026
-**Responsável:** Marcos Paulo (reembolso UC10 + testes + CI); Marco Antonio Santolin (disponibilidade de lote)
+**Data:** 14/06/2026
+**Responsável:** Marco Antonio Santolin (editar evento UC02)
 
+> Editar evento (UC02) na `OrgEventoPage` (14/06/2026):
+> 1. **Edição inline**: botão "Editar" no header abre um formulário no lugar do card de detalhes (nome, descrição, início, encerramento, local), pré-preenchido com os valores atuais. Salvar chama `PUT /eventos/:id` via `editarEvento`, atualiza o evento em memória (reflete na hora) e sai do modo edição. Erros do backend (409 status inválido, 422 data) aparecem via `extractErrorMessage`.
+> 2. **Mesma regra do backend**: o botão "Editar" só aparece em **RASCUNHO** ou **PUBLICADO** (espelha `_STATUS_EDITAVEIS` do `evento_service`) — a UI nunca oferece uma edição que o servidor recusaria. Durante a edição, os botões de transição (Publicar/Encerrar/Cancelar) ficam ocultos para evitar ações conflitantes.
+> 3. **Novo helper `utcIsoToLocalInput` em `lib/format.ts`**: inverso de `localToUtcIso` — converte o ISO UTC do backend para o valor `YYYY-MM-DDTHH:mm` do `<input type="datetime-local">` no fuso de São Paulo, para pré-preencher as datas. O formulário reusa o CSS do `CreateEventPage` para manter o visual idêntico.
+>
 > Reembolso do participante, primeira suíte de testes e CI (11/06/2026 — branch `feat/reembolso-participante`):
 > 1. **Reembolso (UC10)**: botão "Solicitar reembolso" nos ingressos ATIVOS de eventos futuros em `MyTicketsPage` + `ReembolsoModal` (motivo opcional ≤500 chars, aviso de que o reembolso vale para o **pedido inteiro**, focus trap, Escape/overlay bloqueados durante o envio). `Ingresso` ganhou `pedido_id` (nulo p/ cortesia) e `reembolso_solicitado` vindos do backend — o estado "solicitado · aguardando confirmação" **sobrevive a reload** (o status real do ingresso só muda quando o webhook do Asaas confirmar o estorno).
 > 2. **Suíte de testes (Vitest + Testing Library — 32 testes, `npm test`)**: `avaliarLote` (espelho das regras do backend), formatadores pt-BR/fuso SP, `extractErrorMessage`, guards do `RequireAuth` e o fluxo completo do reembolso (sucesso multi-ingresso, motivo null, estado do backend, cortesia sem botão, 409 mantém o modal). Setup em `src/test/setup.ts` (jsdom + jest-dom + cleanup explícito — globals desativados); `vite.config.ts` passou a importar de `vitest/config`.
@@ -117,7 +122,7 @@ Nada em aberto. O painel do organizador agora cobre todos os endpoints do backen
 2. **Reembolso (UC10)**: botão "Solicitar reembolso" em `MyTicketsPage` chamando `reembolsarPedido` (já existe em `api/pedidos.ts`).
 3. **Polling do pedido em PIX**: hoje `CheckoutPage` mostra o QR mas o usuário precisa entrar em `MyTicketsPage` pra ver se foi pago. Adicionar polling de `GET /api/pedidos/{id}` a cada ~5s enquanto status === PENDENTE.
 4. **Leitor de QR de verdade** em `CheckinPage`: hoje aceita o hash colado manualmente. Adicionar `getUserMedia` + lib tipo `@zxing/browser`.
-5. **Editar evento (UC02)**: `PUT /api/eventos/:id` em `OrgEventoPage`.
+5. ~~**Editar evento (UC02)**: `PUT /api/eventos/:id` em `OrgEventoPage`.~~ resolvido em 14/06/2026: edição inline na `OrgEventoPage` (só em RASCUNHO/PUBLICADO, espelhando `_STATUS_EDITAVEIS`).
 6. **Guards de rota**: `RequireAuth` em `/inicio`, `/meus-ingressos`, `/eventos/:id/checkout`, `/eventos/:id/ingressos`, `/organizador/*`. `RequirePerfil` para impedir participante em `/organizador` e vice-versa.
 
 ---
