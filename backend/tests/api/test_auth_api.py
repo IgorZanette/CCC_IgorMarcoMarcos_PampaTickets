@@ -62,8 +62,18 @@ class TestCadastro:
 
 
 class TestLogin:
-    async def test_login_ok_200(self, client, mock_asaas_customers):
+    async def test_login_ok_200(self, client, mock_asaas_customers, db_session):
         await client.post("/api/auth/cadastro", json=_cadastro(email="login@test.com"))
+        # Confirma o email diretamente no banco (simula clique no link de confirmação)
+        from sqlalchemy import select
+        from app.models.usuario import Usuario as UsuarioModel
+        result = await db_session.execute(
+            select(UsuarioModel).where(UsuarioModel.email == "login@test.com")
+        )
+        user = result.scalar_one()
+        user.email_verificado = True
+        await db_session.commit()
+
         resp = await client.post(
             "/api/auth/login",
             json={"email": "login@test.com", "senha": "senha-forte-123"},

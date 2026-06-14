@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
-import { cadastro, login, type Perfil } from "../../api/auth";
+import { cadastro, type Perfil } from "../../api/auth";
 import { extractErrorMessage } from "../../lib/errors";
 import { AuthShell } from "./AuthShell";
 import forms from "./forms.module.css";
@@ -31,8 +31,7 @@ export const CadastroPage = () => {
     setLoading(true);
     try {
       await cadastro({ ...form, perfil });
-      const usuario = await login({ email: form.email, senha: form.senha });
-      navigate(usuario.perfil === "ORGANIZADOR" ? "/organizador" : "/inicio");
+      navigate("/confirmar-email", { state: { email: form.email, senha: form.senha } });
     } catch (err: unknown) {
       setError(extractErrorMessage(err, "Não foi possível criar a conta."));
     } finally {

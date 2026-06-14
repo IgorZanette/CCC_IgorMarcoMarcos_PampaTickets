@@ -126,6 +126,7 @@ async def _seed_usuario(
         senha_hash=auth_service._hash_senha("senha-secreta"),
         perfil=perfil,
         ativo=True,
+        email_verificado=True,
     )
     db.add(usuario)
     await db.commit()

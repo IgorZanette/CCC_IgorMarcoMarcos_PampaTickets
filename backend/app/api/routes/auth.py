@@ -5,15 +5,18 @@ from app.core.rate_limit import limiter
 from app.schemas.usuario import (
     CadastroRequest,
     CodigoValidadoResponse,
+    ConfirmarEmailRequest,
     LoginRequest,
+    MensagemResponse,
     RecuperacaoSenhaRequest,
     RecuperacaoSenhaResponse,
     RedefinirSenhaRequest,
+    ReenviarConfirmacaoRequest,
     TokenResponse,
     UsuarioResponse,
     ValidarCodigoRecuperacaoRequest,
 )
-from app.service import auth_service, recuperacao_senha_service
+from app.service import auth_service, confirmacao_email_service, recuperacao_senha_service
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -22,8 +25,10 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
     "/cadastro", response_model=UsuarioResponse, status_code=status.HTTP_201_CREATED
 )
 @limiter.limit("20/minute")
-async def cadastro(request: Request, data: CadastroRequest, db: DbDep):
-    usuario = await auth_service.cadastrar(db, data)
+async def cadastro(
+    request: Request, data: CadastroRequest, db: DbDep, background_tasks: BackgroundTasks
+):
+    usuario = await auth_service.cadastrar(db, data, background_tasks)
     return usuario
 
 
@@ -105,6 +110,42 @@ async def redefinir_senha(
     """
     resultado = await recuperacao_senha_service.redefinir_senha(
         db, data.email, data.token, data.nova_senha
+    )
+    return resultado
+
+
+@router.post(
+    "/confirmar-email",
+    response_model=MensagemResponse,
+    status_code=status.HTTP_200_OK,
+)
+@limiter.limit("10/minute")
+async def confirmar_email(request: Request, data: ConfirmarEmailRequest, db: DbDep):
+    """
+    Confirma o email do usuário usando o código de 6 dígitos enviado no cadastro.
+    """
+    resultado = await confirmacao_email_service.confirmar_email(db, data.email, data.codigo)
+    return resultado
+
+
+@router.post(
+    "/reenviar-confirmacao",
+    response_model=MensagemResponse,
+    status_code=status.HTTP_200_OK,
+)
+@limiter.limit("3/minute")
+async def reenviar_confirmacao(
+    request: Request,
+    data: ReenviarConfirmacaoRequest,
+    db: DbDep,
+    background_tasks: BackgroundTasks,
+):
+    """
+    Reenvia o código de confirmação de email. Resposta idêntica independente
+    de o email existir (anti-enumeração).
+    """
+    resultado = await confirmacao_email_service.reenviar_confirmacao(
+        db, data.email, background_tasks
     )
     return resultado
 

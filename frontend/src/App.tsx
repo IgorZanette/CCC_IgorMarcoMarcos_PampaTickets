@@ -13,6 +13,7 @@ import { CadastroPage } from "./pages/auth/CadastroPage";
 import { ForgotPasswordPage } from "./pages/auth/ForgotPasswordPage";
 import { ValidateCodePage } from "./pages/auth/ValidateCodePage";
 import { ResetPasswordPage } from "./pages/auth/ResetPasswordPage";
+import { ConfirmarEmailPage } from "./pages/auth/ConfirmarEmailPage";
 
 import { HomePage } from "./pages/participante/HomePage";
 import { SearchPage } from "./pages/participante/SearchPage";
@@ -50,6 +51,7 @@ export const App = () => {
       <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
       <Route path="/validar-codigo" element={<ValidateCodePage />} />
       <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
+      <Route path="/confirmar-email" element={<ConfirmarEmailPage />} />
 
       {/* Vitrine e fluxo do participante (tema escuro) */}
       <Route element={<ParticipantLayout />}>

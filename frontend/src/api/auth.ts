@@ -102,3 +102,28 @@ export const redefinirSenha = async (
   );
   return data;
 };
+
+export type ConfirmarEmailPayload = {
+  email: string;
+  codigo: string;
+};
+
+export const confirmarEmail = async (
+  payload: ConfirmarEmailPayload,
+): Promise<{ mensagem: string }> => {
+  const { data } = await api.post<{ mensagem: string }>(
+    "/auth/confirmar-email",
+    payload,
+  );
+  return data;
+};
+
+export const reenviarConfirmacao = async (
+  payload: { email: string },
+): Promise<{ mensagem: string }> => {
+  const { data } = await api.post<{ mensagem: string }>(
+    "/auth/reenviar-confirmacao",
+    payload,
+  );
+  return data;
+};

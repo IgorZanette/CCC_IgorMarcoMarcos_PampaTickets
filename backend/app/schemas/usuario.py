@@ -108,3 +108,20 @@ class CodigoValidadoResponse(BaseModel):
 
     token: str = Field(..., examples=["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."])
     mensagem: str = Field(..., examples=["Código validado com sucesso"])
+
+
+class ConfirmarEmailRequest(BaseModel):
+    """Request para confirmar email com código de 6 dígitos."""
+
+    email: EmailStr = Field(..., examples=["marco.antonio@santolin.com.br"])
+    codigo: str = Field(..., min_length=6, max_length=6, examples=["123456"])
+
+
+class ReenviarConfirmacaoRequest(BaseModel):
+    """Request para reenviar código de confirmação de email."""
+
+    email: EmailStr = Field(..., examples=["marco.antonio@santolin.com.br"])
+
+
+class MensagemResponse(BaseModel):
+    mensagem: str = Field(..., examples=["Operação realizada com sucesso"])

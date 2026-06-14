@@ -6,6 +6,7 @@ from fastapi import BackgroundTasks, HTTPException, status
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.integrations import email_service
 from app.integrations.supabase.supabase_storage import supabase_storage
 from app.models.evento import StatusEvento
 from app.models.ingresso import Ingresso, StatusIngresso
@@ -183,6 +184,32 @@ async def validar_checkin(
         "participante_nome": ingresso.participante.nome,
         "certificado_url": certificado_url,
     }
+
+
+async def enviar_email_ingresso(db: AsyncSession, ingresso_id: str) -> bool:
+    """Gera PDF do ingresso em memória e envia por email ao participante."""
+    try:
+        ingresso = await ingresso_repo.get_with_relations(db, ingresso_id)
+        if ingresso is None:
+            return False
+
+        pdf_buffer = gerar_pdf_ingresso(ingresso)
+        pdf_bytes = pdf_buffer.getvalue()
+
+        evento = ingresso.lote.evento
+        data_str = evento.data_inicio.strftime("%d/%m/%Y %H:%M")
+
+        return await email_service.enviar_ingresso_por_email(
+            email_destino=ingresso.participante.email,
+            nome_usuario=ingresso.participante.nome,
+            nome_evento=evento.nome,
+            data_evento_str=data_str,
+            pdf_bytes=pdf_bytes,
+            nome_pdf=f"ingresso_{ingresso_id}.pdf",
+        )
+    except Exception:
+        logger.exception("Falha ao enviar ingresso por email (ingresso_id={})", ingresso_id)
+        return False
 
 
 async def criar_ingressos_para_pedido(

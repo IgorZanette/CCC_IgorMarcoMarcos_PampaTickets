@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 import bcrypt
 import jwt
-from fastapi import HTTPException, status
+from fastapi import BackgroundTasks, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -75,7 +75,9 @@ def renovar_token(token_atual: str) -> str:
     return _gerar_token(payload["sub"], auth_time=auth_time)
 
 
-async def cadastrar(db: AsyncSession, data: CadastroRequest) -> Usuario:
+async def cadastrar(
+    db: AsyncSession, data: CadastroRequest, background_tasks: BackgroundTasks | None = None
+) -> Usuario:
     if await usuario_repo.get_by_email(db, data.email):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -111,7 +113,7 @@ async def cadastrar(db: AsyncSession, data: CadastroRequest) -> Usuario:
             detail="Gateway de pagamento indisponível. Tente novamente em instantes.",
         )
 
-    return await usuario_repo.create(
+    usuario = await usuario_repo.create(
         db,
         id=usuario_id,
         nome=data.nome,
@@ -122,6 +124,20 @@ async def cadastrar(db: AsyncSession, data: CadastroRequest) -> Usuario:
         perfil=data.perfil,
         asaas_customer_id=customer["id"],
     )
+
+    if background_tasks is not None:
+        # Import aqui para evitar import circular.
+        from app.service.confirmacao_email_service import solicitar_confirmacao_email
+
+        await solicitar_confirmacao_email(
+            db,
+            usuario_id=usuario.id,
+            email_destino=usuario.email,
+            nome=usuario.nome,
+            background_tasks=background_tasks,
+        )
+
+    return usuario
 
 
 async def login(db: AsyncSession, data: LoginRequest) -> tuple[str, Usuario]:
@@ -137,6 +153,12 @@ async def login(db: AsyncSession, data: LoginRequest) -> tuple[str, Usuario]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Conta desativada.",
+        )
+
+    if not usuario.email_verificado:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="E-mail não confirmado. Verifique sua caixa de entrada e confirme o cadastro.",
         )
 
     token = _gerar_token(str(usuario.id))

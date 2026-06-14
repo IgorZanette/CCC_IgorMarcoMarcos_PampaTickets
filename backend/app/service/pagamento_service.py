@@ -164,6 +164,7 @@ async def processar_webhook(
         # uma entrega anterior tenha falhado após marcar o pagamento como aprovado.
         await ingresso_service.criar_ingressos_para_pedido(db, pagamento.pedido_id)
         await _gerar_pdfs_ingressos(db, pagamento.pedido_id)
+        await _enviar_emails_ingressos(db, pagamento.pedido_id)
 
     elif evento == "PAYMENT_OVERDUE":
         if not await _status_confere_no_asaas(payment_id, _ASAAS_STATUS_VENCIDO):
@@ -247,16 +248,20 @@ async def _notificar_pagamento_confirmado(
 
 
 async def _gerar_pdfs_ingressos(db: AsyncSession, pedido_id: str) -> None:
-    """
-    Gera PDFs para todos os ingressos de um pedido pago.
-    """
+    """Gera PDFs para todos os ingressos de um pedido pago."""
     try:
-        # Buscar ingressos do pedido
         ingressos = await ingresso_repo.get_by_pedido_id(db, pedido_id)
-
-        # Gerar PDF para cada ingresso
         for ingresso in ingressos:
             await gerar_pdf_ingresso_upload(db, str(ingresso.id))
-
     except Exception:
         logger.exception("Falha ao gerar PDFs dos ingressos do pedido {}", pedido_id)
+
+
+async def _enviar_emails_ingressos(db: AsyncSession, pedido_id: str) -> None:
+    """Envia cada ingresso por email ao participante (best-effort)."""
+    try:
+        ingressos = await ingresso_repo.get_by_pedido_id(db, pedido_id)
+        for ingresso in ingressos:
+            await ingresso_service.enviar_email_ingresso(db, str(ingresso.id))
+    except Exception:
+        logger.exception("Falha ao enviar emails de ingressos do pedido {}", pedido_id)
