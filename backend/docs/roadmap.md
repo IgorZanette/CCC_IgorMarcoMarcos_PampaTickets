@@ -133,3 +133,47 @@ relatorios/{evento_id}/{filename}.pdf
 - Usar apenas **templates aprovados** pela Meta para mensagens fora da janela de 24h.
 - Somente o `whatsapp_service` acessa a API da Meta — nenhum outro service.
 - Telefone do participante deve estar no formato: `+55DDNÚMERO`.
+
+---
+
+## UC08 — Galeria de Fotos (plano, ainda não implementado)
+
+> Último UC pendente (baixa prioridade). Plano acordado para não se perder — **ainda não implementado**.
+
+### Decisões da v1 (MVP)
+- **Galeria grátis**: o organizador publica as fotos do evento; participantes/visitantes do evento
+  publicado veem e baixam livremente. **Sem compra** nesta versão — `preco` e o model `CompraFoto`
+  ficam sem uso por ora (como o model `Relatorio` no UC14), reservados para uma fase paga futura.
+- **Upload pelo organizador**, reusando a posse do evento (igual lotes/cupons/cortesias). **Sem perfil
+  FOTOGRAFO** — o model `FotoEvento` só tem `evento_id`, então nada de enum novo nem migration.
+- **Sem processamento de imagem** (sem Pillow): sobe a imagem como veio; `url_thumbnail` e
+  `url_original` recebem a **mesma URL pública** (preview escalado via CSS no front).
+- **Sem migration**: as tabelas `fotos_evento`/`compras_foto` já existem; campos NOT NULL preenchidos
+  (`preco = 0` na galeria grátis).
+
+### Backend (espelha o padrão repo→service→route de cupons/cortesias)
+- **Config** (`core/config.py`): `SUPABASE_BUCKET_FOTOS = "fotos"`, `MAX_FOTO_SIZE_MB = 10`,
+  `ALLOWED_FOTO_TYPES = ["image/jpeg", "image/png", "image/webp"]`.
+- **Dependência**: `uv add python-multipart` (FastAPI precisa dela para `UploadFile`; não está no
+  projeto pois não há upload hoje).
+- **Storage** (`integrations/supabase/supabase_storage.py`): `upload_foto_evento(file, filename,
+  evento_id) -> str` (bucket de fotos, path `{evento_id}/{uuid}.{ext}`, URL pública via
+  `get_public_url`) + `remover_foto(path)` best-effort. Reusa o helper `_to_bytes`.
+- **Novos**: `repositories/foto_repo.py` (CRUD), `service/foto_service.py` (`publicar` valida
+  posse/tipo/tamanho e sobe; `listar_por_evento`; `excluir` valida posse + remove do storage),
+  `schemas/foto.py` (`FotoResponse`), `api/routes/fotos.py` registrado em `main.py`.
+- **Rotas**: `POST /api/eventos/{evento_id}/fotos` (`OrganizadorUser`, `UploadFile`, 201);
+  `GET /api/eventos/{evento_id}/fotos` (público); `DELETE /api/fotos/{foto_id}` (dono, 204).
+
+### Frontend
+- `api/fotos.ts` (`listarFotos`, `enviarFoto` via multipart, `excluirFoto`).
+- Organizador: página `OrgFotosPage` em `/organizador/eventos/:id/fotos` (entra no `EVENT_NAV`) —
+  input de arquivo + grid com excluir.
+- Participante: seção "Galeria" na `EventoPage` (grid + link para baixar o original).
+
+### Evolução futura (fora da v1)
+- **Galeria paga**: ativar `preco` + `CompraFoto` reusando o `Pedido`/Asaas; original em bucket
+  **privado** + **URL assinada** só para quem comprou; o webhook (que hoje cria ingressos) passaria a
+  também liberar as `CompraFoto` do pedido. Preview com marca d'água (Pillow).
+- **Perfil FOTOGRAFO**: enum + migration + FK/vínculo evento↔fotógrafo + deps de auth, caso vire um
+  marketplace de fotógrafos independentes.

@@ -96,6 +96,7 @@ Nada em aberto. Recuperação de senha entregue e testável.
 2. **UC15 — Notificações WhatsApp**: criar `app/integrations/whatsapp/` (Meta Cloud API) e disparar em pagamento confirmado, check-in realizado, véspera do evento e cancelamento de evento.
 3. **Validar UC10 em sandbox**: rodar o roteiro de smoke (POST /api/pedidos/{id}/reembolso) e confirmar que webhook PAYMENT_REFUNDED cancela ingressos — pendência arrastada desde 11/05.
 4. **Tratar as ressalvas da PR `ad83d78`** (ver lista de dívida técnica): estorno de cupom em pedido pago e atomicidade da cascata de cancelamento de evento.
+5. **UC08 — Galeria de Fotos** (último UC pendente): plano de implementação já registrado em [roadmap.md](roadmap.md#uc08--galeria-de-fotos-plano-ainda-não-implementado) — v1 grátis, upload pelo organizador, sem perfil FOTOGRAFO, sem processamento de imagem. Ainda não iniciado.
 
 > Reembolso em massa por cancelamento de evento e suíte de testes foram entregues no merge `ad83d78` (04/06/2026).
 
