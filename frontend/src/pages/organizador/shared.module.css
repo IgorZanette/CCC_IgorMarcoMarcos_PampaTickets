@@ -44,11 +44,18 @@
   border-radius: var(--pt-r-md);
   font-size: 12px;
   font-weight: 600;
-  transition: transform var(--pt-t-fast);
+  transition: transform var(--pt-t-fast), box-shadow var(--pt-t-fast),
+    background var(--pt-t-fast), opacity var(--pt-t-fast);
 }
 
-.btnPrimary:hover {
+.btnPrimary:hover:not(:disabled) {
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--pt-accent) 35%, transparent);
+}
+
+.btnPrimary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
 }
 
 .btnSecondary {
@@ -59,19 +66,75 @@
   border-radius: var(--pt-r-md);
   font-size: 12px;
   font-weight: 500;
+  transition: border-color var(--pt-t-fast), background var(--pt-t-fast),
+    color var(--pt-t-fast);
 }
 
-.btnSecondary:hover {
+.btnSecondary:hover:not(:disabled) {
   border-color: var(--pt-accent);
+  background: var(--pt-accent-soft);
+  color: var(--pt-accent);
 }
 
-.btnDark {
-  background: var(--pt-text);
+.btnDanger {
+  background: var(--pt-danger);
   color: #fff;
   padding: 8px 14px;
   border-radius: var(--pt-r-md);
   font-size: 12px;
   font-weight: 600;
+  transition: transform var(--pt-t-fast), box-shadow var(--pt-t-fast),
+    opacity var(--pt-t-fast);
+}
+
+.btnDanger:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--pt-danger) 35%, transparent);
+}
+
+.btnDark {
+  background: var(--pt-text);
+  color: var(--pt-bg-card);
+  padding: 8px 14px;
+  border-radius: var(--pt-r-md);
+  font-size: 12px;
+  font-weight: 600;
+  transition: transform var(--pt-t-fast), opacity var(--pt-t-fast);
+}
+
+.btnDark:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+/* Estados comuns a todos os botões do organizador */
+.btnPrimary:focus-visible,
+.btnSecondary:focus-visible,
+.btnDanger:focus-visible,
+.btnDark:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--pt-accent-soft);
+}
+
+.btnPrimary:disabled,
+.btnSecondary:disabled,
+.btnDanger:disabled,
+.btnDark:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Card clicável: leve elevação no hover */
+.cardHover {
+  transition: transform var(--pt-t-base), box-shadow var(--pt-t-base),
+    border-color var(--pt-t-base);
+}
+
+.cardHover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--pt-shadow-hover);
+  border-color: var(--pt-accent);
 }
 
 .table {
@@ -85,6 +148,7 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-weight: 600;
+  background: var(--pt-bg-card-2);
 }
 
 .table th {
@@ -100,6 +164,11 @@
 .table tbody tr {
   border-top: 1px solid var(--pt-border);
   font-size: 13px;
+  transition: background var(--pt-t-fast);
+}
+
+.table tbody tr:hover {
+  background: var(--pt-accent-soft);
 }
 
 .table td {

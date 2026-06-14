@@ -11,12 +11,16 @@ import {
   type LoteCreate,
   type TipoLote,
 } from "../../api/lotes";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { EmptyState } from "../../components/EmptyState";
+import { Modal } from "../../components/Modal";
 import { PageHeader } from "../../components/PageHeader";
 import { ProgressBar } from "../../components/ProgressBar";
 import { StatusPill } from "../../components/StatusPill";
 import type { OrgOutlet } from "../../layouts/OrganizerLayout";
 import { extractErrorMessage } from "../../lib/errors";
 import { localToUtcIso, money } from "../../lib/format";
+import { toastError, toastSuccess } from "../../lib/toast";
 
 import shared from "./shared.module.css";
 import styles from "./LotesPage.module.css";
@@ -37,7 +41,8 @@ export const LotesPage = () => {
   const [fim, setFim] = useState("");
   const [ativo, setAtivo] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
+  // Lote alvo do diálogo de exclusão (null = fechado).
+  const [loteExcluir, setLoteExcluir] = useState<Lote | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -63,26 +68,25 @@ export const LotesPage = () => {
       setLotes((prev) =>
         prev ? prev.map((l) => (l.id === lote.id ? atualizado : l)) : prev,
       );
+      toastSuccess(atualizado.ativo ? "Lote ativado." : "Lote desativado.");
     } catch (err) {
-      setError(extractErrorMessage(err, "Falha ao atualizar lote."));
+      toastError(err, "Falha ao atualizar lote.");
     }
   };
 
-  const remover = async (lote: Lote) => {
-    if (!confirm(`Excluir o lote "${lote.nome}"?`)) return;
-    try {
-      await deletarLote(lote.id);
-      setLotes((prev) => (prev ? prev.filter((l) => l.id !== lote.id) : prev));
-    } catch (err) {
-      setError(extractErrorMessage(err, "Falha ao excluir lote."));
-    }
+  const confirmarExclusao = async () => {
+    if (!loteExcluir) return;
+    await deletarLote(loteExcluir.id);
+    setLotes((prev) =>
+      prev ? prev.filter((l) => l.id !== loteExcluir.id) : prev,
+    );
+    toastSuccess("Lote excluído.");
   };
 
   const criarNovoLote = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
     setSubmitting(true);
-    setFormError(null);
     try {
       const payload: LoteCreate = {
         nome,
@@ -103,8 +107,9 @@ export const LotesPage = () => {
       setFim("");
       setAtivo(true);
       setShowForm(false);
+      toastSuccess("Lote criado!");
     } catch (err) {
-      setFormError(extractErrorMessage(err, "Falha ao criar lote."));
+      toastError(err, "Falha ao criar lote.");
     } finally {
       setSubmitting(false);
     }
@@ -116,14 +121,8 @@ export const LotesPage = () => {
         breadcrumb={`${evento?.nome ?? "Evento"} / Lotes & vendas`}
         title="Lotes & vendas"
         actions={
-          <button
-            className={showForm ? shared.btnSecondary : shared.btnPrimary}
-            onClick={() => {
-              setShowForm((v) => !v);
-              setFormError(null);
-            }}
-          >
-            {showForm ? "Cancelar" : "+ Criar lote"}
+          <button className={shared.btnPrimary} onClick={() => setShowForm(true)}>
+            + Criar lote
           </button>
         }
       />
@@ -138,10 +137,16 @@ export const LotesPage = () => {
           </div>
         )}
 
-        {showForm && (
-          <div className={shared.cardPadded}>
-            <h3 className={shared.cardTitle}>Novo lote</h3>
-            <form className={styles.form} onSubmit={criarNovoLote}>
+        <Modal
+          open={showForm}
+          onClose={() => setShowForm(false)}
+          locked={submitting}
+          labelledBy="novo-lote-titulo"
+        >
+          <h3 id="novo-lote-titulo" className={shared.cardTitle}>
+            Novo lote
+          </h3>
+          <form className={styles.form} onSubmit={criarNovoLote}>
               <Field label="Nome do lote *">
                 <input
                   className={styles.input}
@@ -226,28 +231,12 @@ export const LotesPage = () => {
                 </Field>
               </div>
 
-              {formError && (
-                <div
-                  style={{
-                    padding: "10px 12px",
-                    background: "rgba(200, 16, 46, 0.08)",
-                    color: "#c8102e",
-                    borderRadius: 6,
-                    fontSize: 13,
-                  }}
-                >
-                  ⚠ {formError}
-                </div>
-              )}
-
               <div className={styles.formActions}>
                 <button
                   type="button"
                   className={shared.btnSecondary}
-                  onClick={() => {
-                    setShowForm(false);
-                    setFormError(null);
-                  }}
+                  onClick={() => setShowForm(false)}
+                  disabled={submitting}
                 >
                   Cancelar
                 </button>
@@ -260,8 +249,7 @@ export const LotesPage = () => {
                 </button>
               </div>
             </form>
-          </div>
-        )}
+        </Modal>
 
         <div className={shared.card}>
           {lotes === null ? (
@@ -269,9 +257,19 @@ export const LotesPage = () => {
               Carregando lotes…
             </div>
           ) : lotes.length === 0 ? (
-            <div style={{ padding: 32, textAlign: "center", color: "var(--pt-org-text-dim)" }}>
-              Nenhum lote criado ainda.
-            </div>
+            <EmptyState
+              icon="🎟"
+              title="Nenhum lote criado ainda"
+              hint="Crie o primeiro lote para começar a vender ingressos deste evento."
+              action={
+                <button
+                  className={shared.btnPrimary}
+                  onClick={() => setShowForm(true)}
+                >
+                  + Criar lote
+                </button>
+              }
+            />
           ) : (
             <table className={shared.table}>
               <thead>
@@ -326,7 +324,7 @@ export const LotesPage = () => {
                         </button>
                         <button
                           className={shared.btnSecondary}
-                          onClick={() => remover(l)}
+                          onClick={() => setLoteExcluir(l)}
                           disabled={l.quantidade_vendida > 0}
                           title={
                             l.quantidade_vendida > 0
@@ -345,6 +343,21 @@ export const LotesPage = () => {
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={loteExcluir !== null}
+        title="Excluir lote"
+        message={
+          <>
+            Tem certeza que deseja excluir o lote{" "}
+            <strong>{loteExcluir?.nome}</strong>? Essa ação não pode ser desfeita.
+          </>
+        }
+        confirmLabel="Excluir"
+        danger
+        onConfirm={confirmarExclusao}
+        onClose={() => setLoteExcluir(null)}
+      />
     </>
   );
 };

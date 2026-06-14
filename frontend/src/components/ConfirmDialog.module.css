@@ -1,0 +1,59 @@
+.title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--pt-text);
+  margin-bottom: 8px;
+}
+
+.message {
+  font-size: 14px;
+  color: var(--pt-text-dim);
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.cancel {
+  background: transparent;
+  border: 1px solid var(--pt-border);
+  color: var(--pt-text);
+  padding: 10px 16px;
+  border-radius: var(--pt-r-md);
+  font-size: 13px;
+  font-weight: 600;
+  transition: border-color var(--pt-t-fast), background var(--pt-t-fast);
+}
+
+.cancel:hover:not(:disabled) {
+  border-color: var(--pt-text-dim);
+}
+
+.confirm {
+  background: var(--pt-accent);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: var(--pt-r-md);
+  font-size: 13px;
+  font-weight: 700;
+  transition: transform var(--pt-t-fast), box-shadow var(--pt-t-fast),
+    opacity var(--pt-t-fast);
+}
+
+.confirm[data-danger="1"] {
+  background: var(--pt-danger);
+}
+
+.confirm:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.confirm:disabled,
+.cancel:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

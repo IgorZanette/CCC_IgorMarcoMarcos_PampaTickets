@@ -6,6 +6,7 @@ import {
   listarEventosOrganizador,
   type Evento,
 } from "../../api/eventos";
+import { EmptyState } from "../../components/EmptyState";
 import { PageHeader } from "../../components/PageHeader";
 import { SkeletonGrid } from "../../components/Skeleton";
 import { StatusPill } from "../../components/StatusPill";
@@ -76,17 +77,20 @@ export const DashboardPage = () => {
             </div>
           )}
           {!error && eventos?.length === 0 && (
-            <div className={styles.empty}>
-              Você ainda não criou nenhum evento.{" "}
-              <button
-                type="button"
-                className={styles.inlineCta}
-                onClick={() => navigate("/organizador/eventos/novo")}
-              >
-                Criar o primeiro
-              </button>
-              .
-            </div>
+            <EmptyState
+              icon="🎪"
+              title="Você ainda não criou nenhum evento"
+              hint="Publique seu primeiro evento e comece a vender ingressos em minutos."
+              action={
+                <button
+                  type="button"
+                  className={styles.cta}
+                  onClick={() => navigate("/organizador/eventos/novo")}
+                >
+                  + Criar meu primeiro evento
+                </button>
+              }
+            />
           )}
 
           {eventos && eventos.length > 0 && (

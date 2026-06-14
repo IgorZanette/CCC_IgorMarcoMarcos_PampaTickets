@@ -53,6 +53,7 @@
 }
 
 .navItem {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -62,17 +63,33 @@
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: background var(--pt-t-fast), color var(--pt-t-fast);
+  transition: background var(--pt-t-fast), color var(--pt-t-fast),
+    transform var(--pt-t-fast);
 }
 
 .navItem:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
   color: #fff;
+  transform: translateX(2px);
 }
 
-.navItemActive {
-  background: rgba(45, 107, 63, 0.3);
+.navItemActive,
+.navItemActive:hover {
+  background: color-mix(in srgb, var(--pt-pampa-green) 22%, transparent);
   color: #fff;
+  transform: none;
+}
+
+/* Barra de acento à esquerda do item ativo */
+.navItemActive::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 0 var(--pt-r-pill) var(--pt-r-pill) 0;
+  background: var(--pt-pampa-green);
 }
 
 .navIcon {
@@ -127,7 +144,11 @@
   width: 32px;
   height: 32px;
   border-radius: 999px;
-  background: linear-gradient(135deg, #2d6b3f, #a8c98c);
+  background: linear-gradient(
+    135deg,
+    var(--pt-pampa-green-deep),
+    var(--pt-pampa-green)
+  );
   flex-shrink: 0;
   display: flex;
   align-items: center;

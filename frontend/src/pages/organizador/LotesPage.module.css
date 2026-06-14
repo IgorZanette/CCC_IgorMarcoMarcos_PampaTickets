@@ -135,11 +135,37 @@
   background: var(--pt-bg-card);
   color: var(--pt-text);
   box-sizing: border-box;
+  transition: border-color var(--pt-t-fast), box-shadow var(--pt-t-fast);
+}
+
+.input:hover:not(:disabled):not(:focus) {
+  border-color: var(--pt-text-dim);
 }
 
 .input:focus {
   outline: none;
   border-color: var(--pt-accent);
+  box-shadow: 0 0 0 3px var(--pt-accent-soft);
+}
+
+select.input {
+  padding-right: 38px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7770' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+}
+
+.input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity var(--pt-t-fast);
+}
+
+.input[type="datetime-local"]:hover::-webkit-calendar-picker-indicator {
+  opacity: 1;
 }
 
 .row {
@@ -148,12 +174,27 @@
   gap: 16px;
 }
 
+@media (max-width: 560px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+}
+
 .checkRow {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 14px;
   color: var(--pt-text);
+  cursor: pointer;
+}
+
+.checkRow input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--pt-accent);
+  cursor: pointer;
+  margin: 0;
 }
 
 .formActions {

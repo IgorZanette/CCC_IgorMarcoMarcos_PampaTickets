@@ -8,6 +8,7 @@ import type { OrgOutlet } from "../../layouts/OrganizerLayout";
 import { extractErrorMessage } from "../../lib/errors";
 
 import shared from "./shared.module.css";
+import form from "./orgForms.module.css";
 import styles from "./CheckinPage.module.css";
 
 type StreamEntry = {
@@ -72,17 +73,11 @@ export const CheckinPage = () => {
             <form onSubmit={validar} style={{ marginTop: 14, display: "flex", gap: 8 }}>
               <input
                 type="text"
+                className={form.input}
                 value={hash}
                 onChange={(e) => setHash(e.target.value)}
                 placeholder="qr_code_hash"
-                style={{
-                  flex: 1,
-                  padding: "10px 12px",
-                  border: "1px solid var(--pt-org-border)",
-                  borderRadius: 6,
-                  fontFamily: "ui-monospace, monospace",
-                  fontSize: 13,
-                }}
+                style={{ flex: 1, fontFamily: "var(--pt-font-mono)" }}
                 autoFocus
               />
               <button

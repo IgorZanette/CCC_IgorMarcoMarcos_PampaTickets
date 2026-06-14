@@ -10,11 +10,15 @@ import {
   type CupomCreate,
   type TipoDesconto,
 } from "../../api/cupons";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { EmptyState } from "../../components/EmptyState";
+import { Modal } from "../../components/Modal";
 import { PageHeader } from "../../components/PageHeader";
 import { StatusPill } from "../../components/StatusPill";
 import type { OrgOutlet } from "../../layouts/OrganizerLayout";
 import { extractErrorMessage } from "../../lib/errors";
 import { dateLong, localToUtcIso, money } from "../../lib/format";
+import { toastError, toastSuccess } from "../../lib/toast";
 
 import shared from "./shared.module.css";
 import styles from "./orgForms.module.css";
@@ -38,7 +42,7 @@ export const CuponsPage = () => {
   const [validoAte, setValidoAte] = useState("");
   const [ativo, setAtivo] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
+  const [cupomExcluir, setCupomExcluir] = useState<Cupom | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -62,26 +66,25 @@ export const CuponsPage = () => {
       setCupons((prev) =>
         prev ? prev.map((c) => (c.id === cupom.id ? atualizado : c)) : prev,
       );
+      toastSuccess(atualizado.ativo ? "Cupom ativado." : "Cupom desativado.");
     } catch (err) {
-      setError(extractErrorMessage(err, "Falha ao atualizar cupom."));
+      toastError(err, "Falha ao atualizar cupom.");
     }
   };
 
-  const remover = async (cupom: Cupom) => {
-    if (!confirm(`Excluir o cupom "${cupom.codigo}"?`)) return;
-    try {
-      await deletarCupom(cupom.id);
-      setCupons((prev) => (prev ? prev.filter((c) => c.id !== cupom.id) : prev));
-    } catch (err) {
-      setError(extractErrorMessage(err, "Falha ao excluir cupom."));
-    }
+  const confirmarExclusao = async () => {
+    if (!cupomExcluir) return;
+    await deletarCupom(cupomExcluir.id);
+    setCupons((prev) =>
+      prev ? prev.filter((c) => c.id !== cupomExcluir.id) : prev,
+    );
+    toastSuccess("Cupom excluído.");
   };
 
   const criarNovoCupom = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
     setSubmitting(true);
-    setFormError(null);
     try {
       const payload: CupomCreate = {
         codigo,
@@ -102,8 +105,9 @@ export const CuponsPage = () => {
       setValidoAte("");
       setAtivo(true);
       setShowForm(false);
+      toastSuccess("Cupom criado!");
     } catch (err) {
-      setFormError(extractErrorMessage(err, "Falha ao criar cupom."));
+      toastError(err, "Falha ao criar cupom.");
     } finally {
       setSubmitting(false);
     }
@@ -115,14 +119,8 @@ export const CuponsPage = () => {
         breadcrumb={`${evento?.nome ?? "Evento"} / Cupons`}
         title="Cupons de desconto"
         actions={
-          <button
-            className={showForm ? shared.btnSecondary : shared.btnPrimary}
-            onClick={() => {
-              setShowForm((v) => !v);
-              setFormError(null);
-            }}
-          >
-            {showForm ? "Cancelar" : "+ Criar cupom"}
+          <button className={shared.btnPrimary} onClick={() => setShowForm(true)}>
+            + Criar cupom
           </button>
         }
       />
@@ -137,10 +135,16 @@ export const CuponsPage = () => {
           </div>
         )}
 
-        {showForm && (
-          <div className={shared.cardPadded}>
-            <h3 className={shared.cardTitle}>Novo cupom</h3>
-            <form className={styles.form} onSubmit={criarNovoCupom}>
+        <Modal
+          open={showForm}
+          onClose={() => setShowForm(false)}
+          locked={submitting}
+          labelledBy="novo-cupom-titulo"
+        >
+          <h3 id="novo-cupom-titulo" className={shared.cardTitle}>
+            Novo cupom
+          </h3>
+          <form className={styles.form} onSubmit={criarNovoCupom}>
               <div className={styles.row}>
                 <Field label="Código *">
                   <input
@@ -216,16 +220,12 @@ export const CuponsPage = () => {
                 </Field>
               </div>
 
-              {formError && <div className={styles.formError}>⚠ {formError}</div>}
-
               <div className={styles.formActions}>
                 <button
                   type="button"
                   className={shared.btnSecondary}
-                  onClick={() => {
-                    setShowForm(false);
-                    setFormError(null);
-                  }}
+                  onClick={() => setShowForm(false)}
+                  disabled={submitting}
                 >
                   Cancelar
                 </button>
@@ -238,14 +238,25 @@ export const CuponsPage = () => {
                 </button>
               </div>
             </form>
-          </div>
-        )}
+        </Modal>
 
         <div className={shared.card}>
           {cupons === null ? (
             <div className={styles.empty}>Carregando cupons…</div>
           ) : cupons.length === 0 ? (
-            <div className={styles.empty}>Nenhum cupom criado ainda.</div>
+            <EmptyState
+              icon="🏷"
+              title="Nenhum cupom criado ainda"
+              hint="Crie cupons de desconto para impulsionar as vendas do seu evento."
+              action={
+                <button
+                  className={shared.btnPrimary}
+                  onClick={() => setShowForm(true)}
+                >
+                  + Criar cupom
+                </button>
+              }
+            />
           ) : (
             <table className={shared.table}>
               <thead>
@@ -291,7 +302,7 @@ export const CuponsPage = () => {
                       </button>
                       <button
                         className={shared.btnSecondary}
-                        onClick={() => remover(c)}
+                        onClick={() => setCupomExcluir(c)}
                       >
                         Excluir
                       </button>
@@ -303,6 +314,22 @@ export const CuponsPage = () => {
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={cupomExcluir !== null}
+        title="Excluir cupom"
+        message={
+          <>
+            Tem certeza que deseja excluir o cupom{" "}
+            <strong>{cupomExcluir?.codigo}</strong>? Essa ação não pode ser
+            desfeita.
+          </>
+        }
+        confirmLabel="Excluir"
+        danger
+        onConfirm={confirmarExclusao}
+        onClose={() => setCupomExcluir(null)}
+      />
     </>
   );
 };

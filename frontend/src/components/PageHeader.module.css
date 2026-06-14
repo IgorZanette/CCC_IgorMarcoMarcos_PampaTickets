@@ -1,13 +1,18 @@
 .header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   padding: 24px 32px;
   border-bottom: 1px solid var(--pt-border);
-  background: var(--pt-bg-card);
+  background: color-mix(in srgb, var(--pt-bg-card) 88%, transparent);
+  backdrop-filter: blur(8px);
 }
 
 .breadcrumb {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--pt-text-dim);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  font-weight: 500;
 }
 
 .row {

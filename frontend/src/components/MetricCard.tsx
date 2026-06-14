@@ -11,13 +11,9 @@ type Props = {
 };
 
 export const MetricCard = ({ label, value, delta, sub, tone }: Props) => (
-  <div className={styles.card}>
+  <div className={styles.card} data-tone={tone}>
     <div className={styles.label}>{label}</div>
-    <div
-      className={styles.value}
-      data-tone={tone}
-      style={tone ? undefined : undefined}
-    >
+    <div className={styles.value} data-tone={tone}>
       {value}
     </div>
     {(delta !== undefined || sub) && (

@@ -36,6 +36,27 @@
   gap: 16px;
 }
 
+@media (max-width: 1024px) {
+  .metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .charts {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .metrics {
+    grid-template-columns: 1fr;
+  }
+  .body {
+    padding: 16px;
+  }
+  .eventGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .chartCard,
 .lotesCard,
 .tableCard {
@@ -292,20 +313,23 @@
 
 .eventCard {
   text-align: left;
-  background: #fff;
-  border: 1px solid var(--pt-org-border);
+  background: var(--pt-bg-card);
+  border: 1px solid var(--pt-border);
   border-radius: var(--pt-r-lg);
+  box-shadow: var(--pt-shadow-card);
   overflow: hidden;
   cursor: pointer;
   padding: 0;
   font: inherit;
   color: inherit;
-  transition: border-color var(--pt-t-base), transform var(--pt-t-base);
+  transition: border-color var(--pt-t-base), transform var(--pt-t-base),
+    box-shadow var(--pt-t-base);
 }
 
 .eventCard:hover {
-  transform: translateY(-2px);
-  border-color: var(--pt-org-accent);
+  transform: translateY(-3px);
+  border-color: var(--pt-accent);
+  box-shadow: var(--pt-shadow-hover);
 }
 
 .eventCard[data-active="1"] {
