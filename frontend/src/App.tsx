@@ -33,6 +33,7 @@ import { FinancePage } from "./pages/organizador/FinancePage";
 import { AttendeesPage } from "./pages/organizador/AttendeesPage";
 import { CuponsPage } from "./pages/organizador/CuponsPage";
 import { CortesiasPage } from "./pages/organizador/CortesiasPage";
+import { OrgFotosPage } from "./pages/organizador/OrgFotosPage";
 
 export const App = () => {
   // #18: revalida a sessão no carregamento — reidrata o usuário guardado e, se o
@@ -89,6 +90,7 @@ export const App = () => {
           <Route path="eventos/:id/lotes" element={<LotesPage />} />
           <Route path="eventos/:id/cupons" element={<CuponsPage />} />
           <Route path="eventos/:id/cortesias" element={<CortesiasPage />} />
+          <Route path="eventos/:id/fotos" element={<OrgFotosPage />} />
           <Route path="eventos/:id/checkin" element={<CheckinPage />} />
           <Route path="eventos/:id/participantes" element={<AttendeesPage />} />
           <Route path="eventos/:id/financeiro" element={<FinancePage />} />

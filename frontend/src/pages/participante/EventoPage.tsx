@@ -9,6 +9,7 @@ import {
 } from "../../api/eventos";
 import { listarLotes, type Lote } from "../../api/lotes";
 import { validarCupom, type CupomValidacao } from "../../api/cupons";
+import { listarFotos, type Foto } from "../../api/fotos";
 import { EventMap } from "../../components/EventMap";
 import { useCurrentUser } from "../../lib/auth-store";
 import { extractErrorMessage } from "../../lib/errors";
@@ -40,6 +41,13 @@ export const EventoPage = () => {
   const [cupomErro, setCupomErro] = useState<string | null>(null);
   const [validandoCupom, setValidandoCupom] = useState(false);
 
+  // Galeria de fotos (UC08) — exige login para ver. O estado carrega o id a que
+  // pertence; a staleness na troca de evento é resolvida por derivação no render
+  // (sem setState síncrono no effect).
+  const [fotosState, setFotosState] = useState<{ id: string; fotos: Foto[] } | null>(
+    null,
+  );
+
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
@@ -57,6 +65,23 @@ export const EventoPage = () => {
       cancelled = true;
     };
   }, [id]);
+
+  // Galeria carrega só com usuário logado (rota exige autenticação). Sem login,
+  // mostramos um aviso e não disparamos a chamada.
+  useEffect(() => {
+    if (!id || !user) return;
+    let cancelled = false;
+    listarFotos(id)
+      .then((fs) => {
+        if (!cancelled) setFotosState({ id, fotos: fs });
+      })
+      .catch(() => {
+        if (!cancelled) setFotosState({ id, fotos: [] });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id, user]);
 
   const totals = useMemo(() => {
     if (!lotes) return { qty: 0, subtotal: 0 };
@@ -109,6 +134,8 @@ export const EventoPage = () => {
 
   const d = dateFull(ev.data_inicio);
   const total = cupomAtivo ? cupomAtivo.valor_final : totals.subtotal;
+  // null = carregando (ou estado de outro evento); só usa o resultado do id atual.
+  const fotos = id && fotosState?.id === id ? fotosState.fotos : null;
 
   const checkout = () => {
     const pending: PendingOrder = {
@@ -248,6 +275,44 @@ export const EventoPage = () => {
               );
             })}
           </div>
+
+          <h2 className={styles.heading} style={{ marginTop: 24 }}>
+            Galeria de fotos
+          </h2>
+          {!user ? (
+            <p className={styles.lead}>
+              <a href="/login" style={{ color: "var(--pt-accent)", fontWeight: 600 }}>
+                Entre na sua conta
+              </a>{" "}
+              para ver e baixar as fotos deste evento.
+            </p>
+          ) : fotos === null ? (
+            <p className={styles.lead}>Carregando galeria…</p>
+          ) : fotos.length === 0 ? (
+            <p className={styles.lead}>
+              Nenhuma foto publicada para este evento ainda.
+            </p>
+          ) : (
+            <div className={styles.galeria}>
+              {fotos.map((f: Foto) => (
+                <a
+                  key={f.id}
+                  href={f.url_original}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={styles.galeriaItem}
+                  title="Abrir foto em tamanho original"
+                >
+                  <img
+                    className={styles.galeriaImg}
+                    src={f.url_thumbnail}
+                    alt="Foto do evento"
+                    loading="lazy"
+                  />
+                </a>
+              ))}
+            </div>
+          )}
         </div>
 
         <aside>

@@ -22,6 +22,7 @@ const eventNavItems = (id: string) => [
   { to: `/organizador/eventos/${id}/lotes`, label: "Lotes & vendas", icon: "◐" },
   { to: `/organizador/eventos/${id}/cupons`, label: "Cupons", icon: "◇" },
   { to: `/organizador/eventos/${id}/cortesias`, label: "Cortesias", icon: "✦" },
+  { to: `/organizador/eventos/${id}/fotos`, label: "Galeria", icon: "📷" },
   { to: `/organizador/eventos/${id}/checkin`, label: "Check-in ao vivo", icon: "✓" },
   { to: `/organizador/eventos/${id}/participantes`, label: "Participantes", icon: "👥" },
   { to: `/organizador/eventos/${id}/financeiro`, label: "Financeiro", icon: "$" },

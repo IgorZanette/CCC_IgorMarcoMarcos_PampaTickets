@@ -16,6 +16,7 @@ from app.api.routes import (
     cortesias,
     cupons,
     eventos,
+    fotos,
     ingressos,
     lotes,
     pedidos,
@@ -68,6 +69,7 @@ app.include_router(ingressos.router, prefix="/api")
 app.include_router(cupons.router, prefix="/api")
 app.include_router(cortesias.router, prefix="/api")
 app.include_router(relatorios.router, prefix="/api")
+app.include_router(fotos.router, prefix="/api")
 
 
 @app.exception_handler(Exception)

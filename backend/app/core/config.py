@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     SUPABASE_BUCKET_INGRESSOS: str = "ingressos"
     SUPABASE_BUCKET_CERTIFICADOS: str = "certificados"
     SUPABASE_BUCKET_RELATORIOS: str = "relatorios"
+    # Galeria de fotos (UC08). Bucket privado — acesso via URL assinada (login
+    # obrigatório para ver). Os tipos/limite são defaults fixos (não vêm do .env).
+    SUPABASE_BUCKET_FOTOS: str = "fotos"
+    MAX_FOTO_SIZE_MB: int = 10
+    ALLOWED_FOTO_TYPES: list[str] = ["image/jpeg", "image/png", "image/webp"]
 
     # Asaas (gateway de pagamento)
     ASAAS_API_KEY: str

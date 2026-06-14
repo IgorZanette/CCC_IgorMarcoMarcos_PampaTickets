@@ -16,11 +16,12 @@ Concluídos (em ordem cronológica):
 10. ✅ Relatório Financeiro (UC14) — PDF (`StreamingResponse`, sem Supabase) + resumo JSON para o dashboard
 11. ✅ Listagem de ingressos por evento para o organizador (`GET /api/organizador/eventos/{id}/ingressos`)
 
+12. ✅ Galeria de Fotos (UC08) — v1 grátis (upload pelo organizador, visualização exige login, bucket privado + URL assinada)
+
 Pendentes:
 
-12. Notificações WhatsApp (UC15)
-13. Reembolso em massa por cancelamento de evento (extensão do UC10)
-14. **Galeria de Fotos (UC08) — deixar por último**
+13. Notificações WhatsApp (UC15)
+14. Reembolso em massa por cancelamento de evento (extensão do UC10)
 
 ---
 
@@ -136,9 +137,15 @@ relatorios/{evento_id}/{filename}.pdf
 
 ---
 
-## UC08 — Galeria de Fotos (plano, ainda não implementado)
+## UC08 — Galeria de Fotos (implementado — v1 grátis)
 
-> Último UC pendente (baixa prioridade). Plano acordado para não se perder — **ainda não implementado**.
+> Implementado em 14/06/2026. **Divergência do plano original**: a visualização passou
+> a **exigir login** (decisão do usuário) — por isso o bucket `fotos` é **privado** e a
+> listagem devolve **URLs assinadas** (`criar_signed_url`), em vez de URL pública. O
+> restante seguiu o plano abaixo. Backend: `foto_repo`/`foto_service`/`schemas/foto`/
+> `routes/fotos` + 3 settings em `config.py` + 3 métodos no `supabase_storage`. Frontend:
+> `api/fotos.ts`, `OrgFotosPage` (item "Galeria" no `EVENT_NAV`) e seção na `EventoPage`.
+> **Pré-requisito de deploy**: criar o bucket privado `fotos` no Supabase.
 
 ### Decisões da v1 (MVP)
 - **Galeria grátis**: o organizador publica as fotos do evento; participantes/visitantes do evento

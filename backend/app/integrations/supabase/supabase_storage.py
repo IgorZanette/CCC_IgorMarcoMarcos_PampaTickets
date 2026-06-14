@@ -76,6 +76,39 @@ class SupabaseStorage:
 
         return self.client.storage.from_(bucket_name).get_public_url(file_path)
 
+    async def upload_foto_evento(
+        self, file: BinaryIO | bytes, file_path: str, content_type: str
+    ) -> str:
+        """Faz upload de uma foto da galeria (UC08) e retorna o *path* do objeto.
+
+        Diferente dos PDFs: o bucket de fotos é privado, então não devolvemos URL
+        pública — o acesso é via URL assinada (`criar_signed_url`). O `file_path`
+        já vem montado (`{evento_id}/{uuid}.{ext}`).
+        """
+        bucket_name = settings.SUPABASE_BUCKET_FOTOS
+
+        self.client.storage.from_(bucket_name).upload(
+            path=file_path,
+            file=_to_bytes(file),
+            file_options={"content-type": content_type, "upsert": "true"},
+        )
+
+        return file_path
+
+    def criar_signed_url(self, file_path: str, expires_in: int = 3600) -> str:
+        """Gera uma URL assinada temporária para um objeto do bucket de fotos."""
+        bucket_name = settings.SUPABASE_BUCKET_FOTOS
+        resposta = self.client.storage.from_(bucket_name).create_signed_url(
+            file_path, expires_in
+        )
+        # O SDK devolve {"signedURL": "...", ...} (chaves variam entre versões).
+        return resposta.get("signedURL") or resposta.get("signedUrl") or ""
+
+    def remover_foto(self, file_path: str) -> None:
+        """Remove um objeto do bucket de fotos (best-effort — erros são ignorados)."""
+        bucket_name = settings.SUPABASE_BUCKET_FOTOS
+        self.client.storage.from_(bucket_name).remove([file_path])
+
 
 # Instância global (criada apenas se configurado)
 supabase_storage = None
