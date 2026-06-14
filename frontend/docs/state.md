@@ -8,6 +8,17 @@
 ## Última atualização
 
 **Data:** 14/06/2026
+**Responsável:** Marco Antonio Santolin (dupla confirmação nas transições de evento + botão de certificado)
+
+> **Dupla confirmação nas transições de evento (14/06/2026)** — `OrgEventoPage` em [src/pages/organizador/OrgEventoPage.tsx](../src/pages/organizador/OrgEventoPage.tsx) agora exibe `ConfirmDialog` antes de executar **Publicar**, **Encerrar** e **Cancelar evento**. Estado `confirm: null | "publicar" | "encerrar" | "cancelar"` controla qual diálogo está aberto. Os botões agora chamam `setConfirm(...)` em vez de `transicionar(...)` direto. "Cancelar evento" usa `danger={true}` (botão vermelho). Reusa o componente `ConfirmDialog` já existente em `src/components/`.
+>
+> **Botão "Baixar certificado" em Meus Ingressos (14/06/2026)** — `MyTicketsPage` em [src/pages/participante/MyTicketsPage.tsx](../src/pages/participante/MyTicketsPage.tsx) exibe botão "Baixar certificado" no card do ingresso quando `status === "UTILIZADO"` e `certificado_url` está disponível. Se UTILIZADO mas sem URL ainda, mostra "Certificado em geração…". Só aparece na aba **Histórico** (ingressos passados). Tipo `Ingresso` em [src/api/ingressos.ts](../src/api/ingressos.ts) ganhou campo `certificado_url: string | null`.
+
+---
+
+## Última atualização (anterior)
+
+**Data:** 14/06/2026
 **Responsável:** Marco Antonio Santolin (cartão + boleto UC09 + editar evento UC02)
 
 > Cartão de crédito no checkout (14/06/2026 — branch `feat/pagamento-boleto`):

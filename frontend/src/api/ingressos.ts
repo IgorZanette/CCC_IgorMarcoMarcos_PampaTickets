@@ -10,6 +10,7 @@ export type Ingresso = {
   qr_code_hash: string;
   status: StatusIngresso;
   pdf_url: string | null;
+  certificado_url: string | null;
   emitido_em: string;
   evento_nome: string;
   evento_data_inicio: string;

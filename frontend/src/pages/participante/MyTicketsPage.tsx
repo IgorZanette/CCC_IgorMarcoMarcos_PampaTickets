@@ -243,6 +243,20 @@ const IngressoRow = ({
         ) : (
           <span className={styles.ghost}>PDF em geração…</span>
         )}
+        {utilizado && (
+          ing.certificado_url ? (
+            <a
+              href={ing.certificado_url}
+              target="_blank"
+              rel="noreferrer"
+              className={styles.secondary}
+            >
+              Baixar certificado
+            </a>
+          ) : (
+            <span className={styles.ghost}>Certificado em geração…</span>
+          )
+        )}
         {reembolsoSolicitado ? (
           <span className={styles.refundPending}>
             ↩ Reembolso solicitado · aguardando confirmação

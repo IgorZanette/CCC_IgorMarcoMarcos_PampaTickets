@@ -8,6 +8,19 @@
 ## Última atualização
 
 **Data:** 14/06/2026
+**Responsável:** Marco Antonio Santolin (certificado PDF redesenhado + `certificado_url` no endpoint de ingressos)
+
+> **Certificado PDF redesenhado (14/06/2026)** — `gerar_pdf_certificado` em [app/reports/ingresso_pdf.py](../app/reports/ingresso_pdf.py) completamente reescrita: orientação **paisagem** (`landscape(A4)`), **tema claro** (fundo creme `#fffef8` via `pintar_fundo_certificado`) com **borda dupla decorativa** (verde pampa 3pt externo + dourado 1pt interno). Paleta exclusiva `CERT_*` adicionada em [app/reports/branding.py](../app/reports/branding.py) (`CERT_BG`, `CERT_BORDA_EXT`, `CERT_BORDA_INT`, `CERT_TEXTO`, `CERT_TEXTO_DIM`). Layout: logo pequeno + divisor dourado + "CERTIFICADO / DE PARTICIPAÇÃO" + nome do participante em 30pt em destaque + descrição do evento + assinatura. Visual agora é claramente distinto do ingresso (escuro/retrato).
+>
+> **`certificado_url` exposto no endpoint de ingressos (14/06/2026)** — `IngressoResponse` em [app/schemas/ingresso.py](../app/schemas/ingresso.py) ganhou campo `certificado_url: str | None`. Novo `certificado_repo.get_urls_by_ingresso_ids` (batch — sem N+1) em [app/repositories/certificado_repo.py](../app/repositories/certificado_repo.py). Rota `GET /api/ingressos/meus` em [app/api/routes/ingressos.py](../app/api/routes/ingressos.py) agora busca todos os certificados em uma query e popula o campo. Desbloqueia o botão "Baixar certificado" no frontend (só aparece para ingressos UTILIZADO).
+>
+> **Sincronismo Alembic/create_all corrigido (14/06/2026)** — banco estava criado via `Base.metadata.create_all` (startup) em estado defasado de múltiplas migrações (`endereco_completo`, `latitude`, `longitude`, `email_verificado` faltando). Como o banco estava vazio, solução: `docker compose down -v && up -d` (recria schema completo via `create_all` a partir dos models atuais) + `alembic stamp head` para registrar a `alembic_version`. Raiz do problema: `create_all` nunca adiciona colunas a tabelas existentes — só cria tabelas novas. **Regra**: sempre rodar `make migrate` após qualquer `make migration`. Ver nota de pendência abaixo.
+
+---
+
+## Última atualização (anterior)
+
+**Data:** 14/06/2026
 **Responsável:** Marco Antonio Santolin (boleto bancário — UC09)
 
 > **Boleto bancário (14/06/2026, branch `feat/pagamento-boleto`)** — boleto completo de ponta a ponta. A infra já era genérica (enum `MetodoPagamento.BOLETO`, `create_charge` aceita qualquer `billingType`, webhook agnóstico); as lacunas eram pontuais. **(1) Vencimento por método**: `pagamento_service.criar_pagamento` agora calcula `due_date` = hoje + `BOLETO_DUE_DAYS` (config, default **3**) para boleto; PIX segue vencendo hoje (sem mudança). Sem isso o boleto entraria em `PAYMENT_OVERDUE` no mesmo dia. **(2) Dados do boleto**: novo `asaas_charges.get_boleto_identificacao` (rota `/payments/{id}/identificationField` → linha digitável + código de barras); o PDF (`bankSlipUrl`) já vem no response do `create_charge`. Helper `pedido_service._montar_boleto` junta os dois (best-effort, igual ao QR PIX) e é usado em `criar` e `obter_status_pagamento`. **(3) Schemas**: campo `boleto: dict | None` em `PedidoCriadoResponse` e `PagamentoStatusResponse` (espelha `pix_qrcode`). Webhook/models/migrations sem mudança. **149 testes** (novo `test_criar_pedido_boleto_ok` valida boleto preenchido, pix_qrcode None e vencimento hoje+3). Cartão de crédito fica para fase seguinte (via `invoiceUrl` do Asaas já funcionaria; captura no app envolve PCI).
@@ -180,7 +193,7 @@ Nada em aberto. Recuperação de senha entregue e testável.
 - ~~**Refresh token**: definir se será implementado e qual estratégia (rotate/revoke).~~ resolvido em 11/06/2026: **renovação deslizante** via `POST /auth/refresh` (exige token ainda válido; preserva `auth_time`; teto absoluto `SESSION_MAX_HOURS=12`). Decisão de proporcionalidade: sem refresh token rotativo persistido — com o access token em localStorage, rotação no mesmo storage não muda o perfil real de ameaça (XSS captura ambos); endurecimento futuro (produção): cookie httpOnly + denylist. Racional na docstring de `auth_service.renovar_token`.
 - ~~**Rate limiting** nos endpoints `/login` e `/cadastro`.~~ resolvido em 04/06/2026 (merge `ad83d78`, slowapi).
 - ~~**Validação de força de senha** no cadastro.~~ resolvido em 04/06/2026 (merge `ad83d78`).
-- **Migrações Alembic**: confirmar versionamento e execução automática via `make up`.
+- **Migrações Alembic vs `create_all`**: o startup usa `Base.metadata.create_all` (cria tabelas novas, mas nunca adiciona colunas). Após qualquer `make migration`, obrigatório rodar `make migrate` — sem isso, o banco fica defasado e levanta `UndefinedColumnError` em runtime. Candidato a resolver: remover o `create_all` do startup e confiar 100% no Alembic (já temos histórico completo de migrations).
 - ~~**Logs estruturados**~~ resolvido: loguru + `LoggingMiddleware` loga cada request. ~~Tratamento global de exceções~~ também resolvido em 11/05/2026 via `@app.exception_handler(Exception)` em `main.py`.
 - **CORS em produção**: middleware habilitado, mas as origens precisam ser revistas antes de qualquer deploy.
 - **Seed de dados** para desenvolvimento: descartada em 24/05/2026 — usuários de teste são criados manualmente via `POST /api/auth/cadastro`.

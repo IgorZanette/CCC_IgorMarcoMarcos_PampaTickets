@@ -31,3 +31,18 @@ async def get_by_ingresso_id(
         select(Certificado).where(Certificado.ingresso_id == ingresso_id)
     )
     return result.scalar_one_or_none()
+
+
+async def get_urls_by_ingresso_ids(
+    db: AsyncSession, ingresso_ids: list[uuid.UUID]
+) -> dict[uuid.UUID, str]:
+    """Retorna mapa {ingresso_id: pdf_url} para os ids informados."""
+    if not ingresso_ids:
+        return {}
+    result = await db.execute(
+        select(Certificado.ingresso_id, Certificado.pdf_url).where(
+            Certificado.ingresso_id.in_(ingresso_ids),
+            Certificado.pdf_url.isnot(None),
+        )
+    )
+    return {row.ingresso_id: row.pdf_url for row in result}

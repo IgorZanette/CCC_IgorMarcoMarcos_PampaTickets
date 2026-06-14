@@ -36,6 +36,13 @@ TEXTO_DIM_DARK = colors.HexColor("#8a9199")
 ACCENT = colors.HexColor("#7eb86b")  # verde-pampa (accent no dark)
 ACCENT_SOFT = colors.HexColor("#1d2a1f")  # fundo verde bem escuro p/ realces
 
+# === Tema claro — exclusivo para o certificado ===
+CERT_BG = colors.HexColor("#fffef8")          # creme suave
+CERT_BORDA_EXT = colors.HexColor("#2d6b3f")   # verde pampa (borda externa)
+CERT_BORDA_INT = colors.HexColor("#c89b3c")   # dourado (borda interna)
+CERT_TEXTO = colors.HexColor("#1a2e1e")       # verde muito escuro p/ corpo
+CERT_TEXTO_DIM = colors.HexColor("#5a6b5c")   # verde-cinza p/ textos menores
+
 _LOGO_PATH = Path(__file__).resolve().parent.parent / "static" / "logo.png"
 
 
@@ -88,3 +95,24 @@ def qrcode_flowable(dados: str, size_cm: float = 4.5) -> RLImage:
     buffer = gerar_qrcode_image(dados)
     lado = size_cm * cm
     return RLImage(buffer, width=lado, height=lado)
+
+
+def pintar_fundo_certificado(canvas, doc) -> None:
+    """Fundo creme com borda dupla decorativa para o certificado (tema claro)."""
+    canvas.saveState()
+    largura, altura = doc.pagesize
+
+    canvas.setFillColor(CERT_BG)
+    canvas.rect(0, 0, largura, altura, fill=1, stroke=0)
+
+    margem_ext = 1.0 * cm
+    canvas.setStrokeColor(CERT_BORDA_EXT)
+    canvas.setLineWidth(3)
+    canvas.rect(margem_ext, margem_ext, largura - 2 * margem_ext, altura - 2 * margem_ext, fill=0, stroke=1)
+
+    margem_int = margem_ext + 0.4 * cm
+    canvas.setStrokeColor(CERT_BORDA_INT)
+    canvas.setLineWidth(1)
+    canvas.rect(margem_int, margem_int, largura - 2 * margem_int, altura - 2 * margem_int, fill=0, stroke=1)
+
+    canvas.restoreState()

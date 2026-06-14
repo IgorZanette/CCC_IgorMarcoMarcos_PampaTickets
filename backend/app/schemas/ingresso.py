@@ -11,6 +11,7 @@ class IngressoResponse(BaseModel):
     qr_code_hash: str
     status: StatusIngresso
     pdf_url: str | None
+    certificado_url: str | None = None
     emitido_em: datetime
     evento_nome: str
     evento_data_inicio: datetime
@@ -28,13 +29,18 @@ class IngressoResponse(BaseModel):
 
     @classmethod
     def from_ingresso(
-        cls, ing: Ingresso, *, reembolso_solicitado: bool = False
+        cls,
+        ing: Ingresso,
+        *,
+        reembolso_solicitado: bool = False,
+        certificado_url: str | None = None,
     ) -> "IngressoResponse":
         return cls(
             id=ing.id,
             qr_code_hash=ing.qr_code_hash,
             status=ing.status,
             pdf_url=ing.pdf_url,
+            certificado_url=certificado_url,
             emitido_em=ing.emitido_em,
             evento_nome=ing.lote.evento.nome,
             evento_data_inicio=ing.lote.evento.data_inicio,

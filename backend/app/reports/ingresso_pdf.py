@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from typing import BinaryIO
 
 from reportlab.lib.enums import TA_CENTER
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus import (
@@ -205,101 +205,138 @@ def gerar_pdf_ingresso(ingresso: Ingresso) -> BinaryIO:
 
 
 def gerar_pdf_certificado(ingresso: Ingresso) -> BinaryIO:
-    """Certificado de participação no tema escuro, com moldura e marca."""
+    """Certificado de participação em paisagem, tema claro, com borda dupla decorativa."""
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
         buffer,
-        pagesize=A4,
-        rightMargin=2.5 * cm,
-        leftMargin=2.5 * cm,
-        topMargin=3 * cm,
-        bottomMargin=2.5 * cm,
+        pagesize=landscape(A4),
+        rightMargin=3.2 * cm,
+        leftMargin=3.2 * cm,
+        topMargin=2.2 * cm,
+        bottomMargin=2.2 * cm,
     )
 
     styles = getSampleStyleSheet()
+
+    marca_style = ParagraphStyle(
+        "CertMarca",
+        parent=styles["Normal"],
+        fontSize=11,
+        alignment=TA_CENTER,
+        textColor=branding.CERT_TEXTO_DIM,
+        spaceAfter=0,
+        leading=14,
+    )
     titulo = ParagraphStyle(
         "CertTitulo",
         parent=styles["Heading1"],
-        fontSize=30,
+        fontSize=36,
         alignment=TA_CENTER,
-        textColor=branding.ACCENT,
-        spaceAfter=6,
+        textColor=branding.CERT_BORDA_EXT,
+        spaceAfter=2,
+        leading=42,
     )
-    selo = ParagraphStyle(
-        "CertSelo",
+    subtitulo = ParagraphStyle(
+        "CertSubtitulo",
         parent=styles["Normal"],
-        fontSize=12,
+        fontSize=13,
         alignment=TA_CENTER,
-        textColor=branding.GOLD_CLARO,
-        spaceAfter=30,
+        textColor=branding.CERT_BORDA_INT,
+        spaceAfter=0,
+        leading=18,
+        charSpace=3,
     )
-    corpo = ParagraphStyle(
-        "CertCorpo",
+    intro = ParagraphStyle(
+        "CertIntro",
         parent=styles["Normal"],
-        fontSize=15,
+        fontSize=13,
         alignment=TA_CENTER,
-        textColor=branding.TEXTO_LIGHT,
-        spaceAfter=16,
-        leading=22,
+        textColor=branding.CERT_TEXTO_DIM,
+        spaceAfter=4,
+        leading=18,
     )
     nome_style = ParagraphStyle(
         "CertNome",
         parent=styles["Heading2"],
-        fontSize=22,
+        fontSize=30,
         alignment=TA_CENTER,
-        textColor=branding.ACCENT,
-        spaceAfter=16,
+        textColor=branding.CERT_BORDA_EXT,
+        spaceAfter=6,
+        leading=36,
     )
-    assinatura = ParagraphStyle(
-        "CertAssinatura",
+    corpo = ParagraphStyle(
+        "CertCorpo",
         parent=styles["Normal"],
-        fontSize=12,
+        fontSize=13,
         alignment=TA_CENTER,
-        textColor=branding.TEXTO_DIM_DARK,
+        textColor=branding.CERT_TEXTO,
+        spaceAfter=0,
+        leading=20,
+    )
+    rodape_style = ParagraphStyle(
+        "CertRodape",
+        parent=styles["Normal"],
+        fontSize=9,
+        alignment=TA_CENTER,
+        textColor=branding.CERT_TEXTO_DIM,
+        leading=13,
     )
 
     evento = ingresso.lote.evento
     usuario = ingresso.participante
+    data_evento = evento.data_inicio.strftime("%d/%m/%Y")
+    data_emissao = datetime.now(timezone.utc).strftime("%d/%m/%Y")
 
     story: list = []
 
-    logo = branding.logo_flowable(width_cm=3.5)
+    logo = branding.logo_flowable(width_cm=1.8)
     if logo is not None:
         logo.hAlign = "CENTER"
         story.append(logo)
-        story.append(Spacer(1, 0.3 * cm))
+        story.append(Spacer(1, 0.15 * cm))
+    story.append(Paragraph("PampaTickets", marca_style))
+
+    story.append(Spacer(1, 0.5 * cm))
+    story.append(
+        HRFlowable(width="35%", thickness=1, color=branding.CERT_BORDA_INT, hAlign="CENTER")
+    )
+    story.append(Spacer(1, 0.5 * cm))
 
     story.append(Paragraph("CERTIFICADO", titulo))
-    story.append(Paragraph("DE PARTICIPAÇÃO", selo))
+    story.append(Paragraph("DE PARTICIPAÇÃO", subtitulo))
 
-    story.append(Paragraph("Certificamos que", corpo))
+    story.append(Spacer(1, 0.7 * cm))
+
+    story.append(Paragraph("Certificamos que", intro))
+    story.append(Spacer(1, 0.2 * cm))
     story.append(Paragraph(usuario.nome, nome_style))
+    story.append(Spacer(1, 0.2 * cm))
     story.append(
         Paragraph(
             f"participou do evento <b>{evento.nome}</b>, "
-            f"realizado em {evento.data_inicio.strftime('%d/%m/%Y')}, "
-            f"no local {evento.local}.",
+            f"realizado em {data_evento}, no local {evento.local}.",
             corpo,
         )
     )
 
-    story.append(Spacer(1, 2 * cm))
+    story.append(Spacer(1, 0.9 * cm))
     story.append(
-        HRFlowable(width="50%", thickness=1, color=branding.BORDA_DARK, hAlign="CENTER")
+        HRFlowable(width="45%", thickness=1, color=branding.CERT_BORDA_EXT, hAlign="CENTER")
     )
-    story.append(Spacer(1, 0.2 * cm))
-    story.append(Paragraph("PampaTickets", assinatura))
+    story.append(Spacer(1, 0.3 * cm))
+
     story.append(
         Paragraph(
-            f"Certificado emitido em {datetime.now(timezone.utc).strftime('%d/%m/%Y')}",
-            assinatura,
+            f"PampaTickets — Sistema de Gestão de Eventos<br/>"
+            f"Emitido em {data_emissao}",
+            rodape_style,
         )
     )
 
     doc.build(
         story,
-        onFirstPage=branding.pintar_fundo_dark,
-        onLaterPages=branding.pintar_fundo_dark,
+        onFirstPage=branding.pintar_fundo_certificado,
+        onLaterPages=branding.pintar_fundo_certificado,
     )
     buffer.seek(0)
     return buffer

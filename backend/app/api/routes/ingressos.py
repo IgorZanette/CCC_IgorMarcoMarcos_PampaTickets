@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import OrganizadorUser, ParticipanteUser
 from app.db.session import get_db
-from app.repositories import evento_repo, ingresso_repo, reembolso_repo
+from app.repositories import certificado_repo, evento_repo, ingresso_repo, reembolso_repo
 from app.schemas.ingresso import IngressoOrganizadorResponse, IngressoResponse
 
 router = APIRouter(tags=["Ingressos"])
@@ -45,6 +45,9 @@ async def listar_meus_ingressos(
         i.pedido_item.pedido_id for i in ingressos if i.pedido_item is not None
     }
     reembolsados = await reembolso_repo.pedido_ids_com_reembolso(db, pedido_ids)
+    cert_urls = await certificado_repo.get_urls_by_ingresso_ids(
+        db, [i.id for i in ingressos]
+    )
     return [
         IngressoResponse.from_ingresso(
             i,
@@ -52,6 +55,7 @@ async def listar_meus_ingressos(
                 i.pedido_item is not None
                 and i.pedido_item.pedido_id in reembolsados
             ),
+            certificado_url=cert_urls.get(i.id),
         )
         for i in ingressos
     ]

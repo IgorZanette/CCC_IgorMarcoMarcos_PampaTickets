@@ -13,6 +13,7 @@ import {
   type RelatorioResumo,
 } from "../../api/eventos";
 import { AddressAutocomplete } from "../../components/AddressAutocomplete";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { EventMap } from "../../components/EventMap";
 import { MetricCard } from "../../components/MetricCard";
 import { PageHeader } from "../../components/PageHeader";
@@ -33,6 +34,7 @@ export const OrgEventoPage = () => {
   const [current, setCurrent] = useState<Evento | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirm, setConfirm] = useState<null | "publicar" | "encerrar" | "cancelar">(null);
 
   // Edição inline do evento (UC02). Só permitida em RASCUNHO/PUBLICADO — mesma
   // regra do backend (`_STATUS_EDITAVEIS`); o botão nem aparece nos demais.
@@ -200,7 +202,7 @@ export const OrgEventoPage = () => {
             {!editing && ev.status === "RASCUNHO" && (
               <button
                 className={shared.btnPrimary}
-                onClick={() => transicionar("publicar")}
+                onClick={() => setConfirm("publicar")}
                 disabled={busy}
               >
                 Publicar
@@ -209,7 +211,7 @@ export const OrgEventoPage = () => {
             {!editing && ev.status === "PUBLICADO" && (
               <button
                 className={shared.btnSecondary}
-                onClick={() => transicionar("encerrar")}
+                onClick={() => setConfirm("encerrar")}
                 disabled={busy}
               >
                 Encerrar
@@ -218,7 +220,7 @@ export const OrgEventoPage = () => {
             {!editing && editavel && (
               <button
                 className={shared.btnDark}
-                onClick={() => transicionar("cancelar")}
+                onClick={() => setConfirm("cancelar")}
                 disabled={busy}
               >
                 Cancelar evento
@@ -457,6 +459,33 @@ export const OrgEventoPage = () => {
           </Link>
         </div>
       </div>
+      <ConfirmDialog
+        open={confirm === "publicar"}
+        title="Publicar evento?"
+        message="O evento ficará visível ao público e os participantes poderão comprar ingressos. Deseja continuar?"
+        confirmLabel="Publicar"
+        onConfirm={() => transicionar("publicar")}
+        onClose={() => setConfirm(null)}
+      />
+
+      <ConfirmDialog
+        open={confirm === "encerrar"}
+        title="Encerrar evento?"
+        message="O evento será marcado como encerrado. Não será mais possível vender ingressos."
+        confirmLabel="Encerrar"
+        onConfirm={() => transicionar("encerrar")}
+        onClose={() => setConfirm(null)}
+      />
+
+      <ConfirmDialog
+        open={confirm === "cancelar"}
+        title="Cancelar evento?"
+        message="Esta ação não pode ser desfeita. O evento será cancelado e sairá de circulação."
+        confirmLabel="Cancelar evento"
+        danger
+        onConfirm={() => transicionar("cancelar")}
+        onClose={() => setConfirm(null)}
+      />
     </>
   );
 };
