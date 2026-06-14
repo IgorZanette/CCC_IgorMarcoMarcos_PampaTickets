@@ -8,8 +8,15 @@
 ## Última atualização
 
 **Data:** 14/06/2026
-**Responsável:** Marco Antonio Santolin (boleto UC09 + editar evento UC02)
+**Responsável:** Marco Antonio Santolin (cartão + boleto UC09 + editar evento UC02)
 
+> Cartão de crédito no checkout (14/06/2026 — branch `feat/pagamento-boleto`):
+> 1. **Abordagem**: página segura hospedada do Asaas (redirecionamento) — o cartão nunca passa pelo servidor (fora do escopo PCI). Backend **inalterado** (já manda `billingType=CREDIT_CARD` e devolve `invoice_url`); o seletor e o hint já existiam.
+> 2. **CTA de cartão na `PagamentoStatusPage`**: seção dedicada quando `metodo === "CREDIT_CARD"` com o botão de destaque **"💳 Pagar com cartão"** apontando para a `invoice_url`. A página passou a conhecer o `metodo` (do state da navegação + reidratado via `obterPagamento` no reload). O `CheckoutPage` repassa `metodo` no state.
+> 3. **CTA compartilhado**: a classe `.boletoCta` virou `.payCta`, reusada por boleto e cartão. O botão genérico "Abrir fatura" agora só aparece como fallback (quando não há CTA dedicado).
+>
+> Destaque do botão de boleto (14/06/2026): "Abrir boleto" virou CTA primário em destaque (antes era link secundário discreto); linha digitável passou a alternativa "Ou copie a linha digitável".
+>
 > Boleto bancário no checkout (14/06/2026 — branch `feat/pagamento-boleto`):
 > 1. **Seção de boleto na `PagamentoStatusPage`**: quando o pedido está aguardando e o método é boleto, mostra a **linha digitável** copiável (botão "Copiar linha digitável" via `navigator.clipboard`) + link "Abrir boleto (PDF)". Espelha a seção do PIX e reusa `.card`/`.hint`/`.pixPayload`/`.secondary`. Sobrevive a reload: reidrata o boleto via `obterPagamento` quando o state da navegação se perde (mesmo padrão do QR PIX).
 > 2. **API**: novo tipo `Boleto` (`bankSlipUrl`, `identificationField`, `barCode`) e campo `boleto` em `PedidoCriado` e `PagamentoStatus` (`api/pedidos.ts`). O `CheckoutPage` repassa `criado.boleto` no state da navegação. O seletor de método e os hints já existiam.

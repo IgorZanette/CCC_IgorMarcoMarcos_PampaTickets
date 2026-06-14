@@ -153,8 +153,9 @@
   text-decoration: none;
 }
 
-/* Ação principal do boleto — destacada para o usuário não perder de vista. */
-.boletoCta {
+/* Ação principal de pagamento (boleto/cartão) — destacada para o usuário
+   não perder de vista o botão que abre o boleto ou a página do cartão. */
+.payCta {
   width: 100%;
   padding: 16px;
   border-radius: var(--pt-r-md);
@@ -167,7 +168,7 @@
   transition: transform var(--pt-t-fast), filter var(--pt-t-fast);
 }
 
-.boletoCta:hover {
+.payCta:hover {
   transform: translateY(-1px);
   filter: brightness(1.05);
 }

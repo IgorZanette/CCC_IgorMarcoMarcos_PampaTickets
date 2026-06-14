@@ -161,6 +161,7 @@ export const CheckoutPage = () => {
           invoiceUrl: criado.invoice_url,
           pixQrcode: criado.pix_qrcode,
           boleto: criado.boleto,
+          metodo,
         },
       });
     } catch (err) {
