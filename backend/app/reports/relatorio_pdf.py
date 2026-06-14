@@ -16,6 +16,8 @@ from reportlab.platypus import (
     TableStyle,
 )
 
+from app.reports import branding
+
 
 @dataclass
 class DadosLote:
@@ -64,7 +66,7 @@ def gerar_pdf_relatorio(dados: DadosRelatorio) -> BinaryIO:
         fontSize=20,
         spaceAfter=4,
         alignment=1,
-        textColor=colors.HexColor("#1a365d"),
+        textColor=branding.VERDE,
     )
     subtitle_style = ParagraphStyle(
         "RelSubtitle",
@@ -72,7 +74,7 @@ def gerar_pdf_relatorio(dados: DadosRelatorio) -> BinaryIO:
         fontSize=11,
         spaceAfter=2,
         alignment=1,
-        textColor=colors.HexColor("#4a5568"),
+        textColor=branding.GOLD,
     )
     section_style = ParagraphStyle(
         "RelSection",
@@ -80,7 +82,7 @@ def gerar_pdf_relatorio(dados: DadosRelatorio) -> BinaryIO:
         fontSize=13,
         spaceBefore=14,
         spaceAfter=6,
-        textColor=colors.HexColor("#2d3748"),
+        textColor=branding.VERDE,
     )
     normal_style = ParagraphStyle(
         "RelNormal",
@@ -100,6 +102,11 @@ def gerar_pdf_relatorio(dados: DadosRelatorio) -> BinaryIO:
     story = []
 
     # Cabeçalho
+    logo = branding.logo_flowable(width_cm=2.6)
+    if logo is not None:
+        logo.hAlign = "CENTER"
+        story.append(logo)
+        story.append(Spacer(1, 0.2 * cm))
     story.append(Paragraph("PampaTickets", title_style))
     story.append(Paragraph("Relatório Financeiro", subtitle_style))
     story.append(Spacer(1, 0.3 * cm))
@@ -138,7 +145,7 @@ def gerar_pdf_relatorio(dados: DadosRelatorio) -> BinaryIO:
     resumo_table.setStyle(
         TableStyle(
             [
-                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#2d3748")),
+                ("BACKGROUND", (0, 0), (-1, 0), branding.VERDE),
                 ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
                 ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
                 ("FONTSIZE", (0, 0), (-1, 0), 10),
@@ -159,7 +166,7 @@ def gerar_pdf_relatorio(dados: DadosRelatorio) -> BinaryIO:
                 ("RIGHTPADDING", (0, 0), (-1, -1), 8),
                 # Destaque na linha de receita líquida
                 ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
-                ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#ebf8ff")),
+                ("BACKGROUND", (0, -1), (-1, -1), branding.VERDE_SOFT),
             ]
         )
     )
@@ -197,7 +204,7 @@ def gerar_pdf_relatorio(dados: DadosRelatorio) -> BinaryIO:
         lote_table.setStyle(
             TableStyle(
                 [
-                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#2d3748")),
+                    ("BACKGROUND", (0, 0), (-1, 0), branding.VERDE),
                     ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
                     ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
                     ("FONTSIZE", (0, 0), (-1, 0), 9),
