@@ -8,8 +8,9 @@ Backend em desenvolvimento ativo. Visão geral dos casos de uso:
 
 | Status | Casos de uso |
 |---|---|
-| ✅ Implementado | UC01 Autenticação · UC02 Eventos · UC03 Lotes · UC04 Check-in · UC05 Cupons · UC06 Cortesias · UC07 Compra · UC09 Pagamento Asaas · UC10 Reembolso · UC11 Webhooks · UC12 Ingresso PDF · UC13 Certificado PDF |
-| ⏳ Pendente | UC14 Relatório financeiro · UC15 Notificações WhatsApp · UC08 Galeria de fotos |
+| ✅ Implementado | UC01 Autenticação · UC02 Eventos · UC03 Lotes · UC04 Check-in · UC05 Cupons · UC06 Cortesias · UC07 Compra · UC09 Pagamento Asaas (Pix, boleto e cartão) · UC10 Reembolso · UC11 Webhooks · UC12 Ingresso PDF · UC13 Certificado PDF · UC14 Relatório financeiro |
+| 🔶 Parcial | UC15 Notificações WhatsApp — draft estrutural pronto e testado (Meta mockada); falta credenciais/templates aprovados no Meta e o gatilho "véspera do evento". Pausado por decisão do time |
+| ⏳ Pendente | UC08 Galeria de fotos (não iniciado, baixa prioridade) |
 
 Detalhes do que está em andamento e do que mudou em cada sessão: [`backend/docs/state.md`](backend/docs/state.md).
 
