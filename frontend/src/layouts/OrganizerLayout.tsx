@@ -39,7 +39,11 @@ export const OrganizerLayout = () => {
   // O id do evento ativo vem da URL (não de localStorage). useParams no layout-pai
   // não enxerga o :id das rotas filhas; useMatch enxerga.
   const match = useMatch("/organizador/eventos/:id/*");
-  const activeId = match?.params.id ?? null;
+  // "novo" é o segmento reservado da tela de criação — não é um id de evento.
+  // Tratá-lo como id faria o layout buscar GET /eventos/novo (erro de UUID no
+  // backend) e exibir a navegação de lotes/cupons antes do evento existir.
+  const rawId = match?.params.id ?? null;
+  const activeId = rawId === "novo" ? null : rawId;
   const { evento, loading, error } = useEvento(activeId);
 
   const handleLogout = () => {
