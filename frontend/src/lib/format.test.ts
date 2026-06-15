@@ -27,11 +27,11 @@ describe("money", () => {
 
 describe("currency", () => {
   it("formata valores em reais com duas casas", () => {
-    expect(currency(1234.5).replace(/ /g, " ")).toBe("R$ 1.234,50");
+    expect(currency(1234.5).replace(/\u00A0/g, " ")).toBe("R$ 1.234,50");
   });
 
   it("exibe R$ 0,00 para zero — financeiro nunca mostra 'Grátis'", () => {
-    expect(currency(0).replace(/ /g, " ")).toBe("R$ 0,00");
+    expect(currency(0).replace(/\u00A0/g, " ")).toBe("R$ 0,00");
   });
 });
 
