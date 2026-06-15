@@ -22,7 +22,7 @@ import { LoadingBlock, Spinner } from "../../components/Spinner";
 import { StatusPill } from "../../components/StatusPill";
 import { extractErrorMessage } from "../../lib/errors";
 import { toastSuccess } from "../../lib/toast";
-import { dateLong, localToUtcIso, money, utcIsoToLocalInput } from "../../lib/format";
+import { currency, dateLong, localToUtcIso, utcIsoToLocalInput } from "../../lib/format";
 import type { OrgOutlet } from "../../layouts/OrganizerLayout";
 
 import shared from "./shared.module.css";
@@ -284,14 +284,14 @@ export const OrgEventoPage = () => {
             <div className={styles.metrics}>
               <MetricCard
                 label="Receita líquida"
-                value={money(resumo.receita_liquida)}
+                value={currency(resumo.receita_liquida)}
                 tone="ok"
-                sub={`Bruta: ${money(resumo.receita_bruta)}`}
+                sub={`Bruta: ${currency(resumo.receita_bruta)}`}
               />
               <MetricCard
                 label="Descontos (cupons)"
-                value={money(resumo.desconto_cupons)}
-                sub={`Reembolsos: ${money(resumo.valor_reembolsado)}`}
+                value={currency(resumo.desconto_cupons)}
+                sub={`Reembolsos: ${currency(resumo.valor_reembolsado)}`}
               />
               <MetricCard
                 label="Ingressos vendidos"

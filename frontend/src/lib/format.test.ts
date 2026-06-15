@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  currency,
   dateFull,
   dateLong,
   formatCelular,
@@ -21,6 +22,16 @@ describe("money", () => {
 
   it("exibe Grátis para zero", () => {
     expect(money(0)).toBe("Grátis");
+  });
+});
+
+describe("currency", () => {
+  it("formata valores em reais com duas casas", () => {
+    expect(currency(1234.5).replace(/ /g, " ")).toBe("R$ 1.234,50");
+  });
+
+  it("exibe R$ 0,00 para zero — financeiro nunca mostra 'Grátis'", () => {
+    expect(currency(0).replace(/ /g, " ")).toBe("R$ 0,00");
   });
 });
 

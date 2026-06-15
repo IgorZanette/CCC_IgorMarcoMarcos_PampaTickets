@@ -4,14 +4,18 @@
 
 const TZ = "America/Sao_Paulo";
 
-export const money = (v: number): string =>
-  v === 0
-    ? "Grátis"
-    : "R$ " +
-      Number(v).toLocaleString("pt-BR", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
+// Valor monetário "puro" — sempre "R$ 0,00", nunca "Grátis". Use em contextos
+// financeiros/relatórios, onde zero é um valor real a exibir (receita, descontos,
+// reembolsos) e não a ausência de preço.
+export const currency = (v: number): string =>
+  "R$ " +
+  Number(v).toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+// Preço voltado ao participante: zero vira "Grátis" (ingresso/lote sem custo).
+export const money = (v: number): string => (v === 0 ? "Grátis" : currency(v));
 
 export const moneyShort = (v: number): string =>
   v === 0
