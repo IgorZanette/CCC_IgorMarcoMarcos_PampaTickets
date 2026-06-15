@@ -1,4 +1,4 @@
-.PHONY: help install dev build up down restart logs logs-api logs-db ps shell-api shell-db migrate migrate-down migrate-history migration test lint format destroy db-reset ngrok
+.PHONY: help install dev build up down restart logs logs-api logs-db ps shell-api shell-db migrate migrate-down migrate-history migration seed test lint format destroy db-reset ngrok
 
 DC = docker compose
 BACKEND_DIR := backend
@@ -28,6 +28,7 @@ help:
 	@echo "  migrate-down         Reverte a última migração"
 	@echo "  migrate-history      Exibe o histórico de migrações"
 	@echo "  migration m=msg      Cria uma nova migração (ex: make migration m='add tabela X')"
+	@echo "  seed                 Popula o banco com eventos de demonstração"
 	@echo ""
 	@echo "  Qualidade"
 	@echo "  ---------"
@@ -93,6 +94,9 @@ ifndef m
 	$(error Informe a mensagem da migração: make migration m="sua mensagem")
 endif
 	cd $(BACKEND_DIR) && uv run alembic revision --autogenerate -m "$(m)"
+
+seed:
+	cd $(BACKEND_DIR) && uv run python -m app.db.seed
 
 # --- Qualidade ---
 
