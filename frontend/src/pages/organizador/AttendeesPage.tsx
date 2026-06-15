@@ -5,7 +5,9 @@ import {
   listarIngressosDoEvento,
   type IngressoOrganizador,
 } from "../../api/ingressos";
+import { Icon } from "../../components/Icon";
 import { PageHeader } from "../../components/PageHeader";
+import { LoadingBlock } from "../../components/Spinner";
 import { StatusPill } from "../../components/StatusPill";
 import type { OrgOutlet } from "../../layouts/OrganizerLayout";
 import { extractErrorMessage } from "../../lib/errors";
@@ -61,7 +63,7 @@ export const AttendeesPage = () => {
             className={shared.cardPadded}
             style={{ borderColor: "#c8102e", color: "#c8102e", marginBottom: 16 }}
           >
-            ⚠ {error}
+            <Icon name="warning" /> {error}
           </div>
         )}
 
@@ -76,7 +78,7 @@ export const AttendeesPage = () => {
 
         <div className={shared.card}>
           {filtrados === null ? (
-            <div className={styles.empty}>Carregando participantes…</div>
+            <LoadingBlock message="Carregando participantes…" />
           ) : ingressos !== null && ingressos.length === 0 ? (
             <div className={styles.empty}>
               Nenhum ingresso vendido para este evento ainda.

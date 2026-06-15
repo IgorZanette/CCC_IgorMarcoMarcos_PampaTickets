@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Response, status
+from fastapi import APIRouter, BackgroundTasks, Response, status
 
 from app.api.deps import DbDep, OrganizadorUser
 from app.schemas.cortesia import CortesiaCreate, CortesiaResponse
@@ -19,8 +19,11 @@ async def emitir_cortesia(
     data: CortesiaCreate,
     db: DbDep,
     organizador: OrganizadorUser,
+    background_tasks: BackgroundTasks,
 ):
-    cortesia = await cortesia_service.emitir(db, organizador, evento_id, data)
+    cortesia = await cortesia_service.emitir(
+        db, organizador, evento_id, data, background_tasks
+    )
     return CortesiaResponse.from_cortesia(cortesia)
 
 

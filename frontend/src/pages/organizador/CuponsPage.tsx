@@ -12,7 +12,9 @@ import {
 } from "../../api/cupons";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { EmptyState } from "../../components/EmptyState";
+import { Icon } from "../../components/Icon";
 import { Modal } from "../../components/Modal";
+import { LoadingBlock } from "../../components/Spinner";
 import { PageHeader } from "../../components/PageHeader";
 import { StatusPill } from "../../components/StatusPill";
 import type { OrgOutlet } from "../../layouts/OrganizerLayout";
@@ -131,7 +133,7 @@ export const CuponsPage = () => {
             className={shared.cardPadded}
             style={{ borderColor: "#c8102e", color: "#c8102e", marginBottom: 16 }}
           >
-            ⚠ {error}
+            <Icon name="warning" /> {error}
           </div>
         )}
 
@@ -243,10 +245,10 @@ export const CuponsPage = () => {
 
         <div className={shared.card}>
           {cupons === null ? (
-            <div className={styles.empty}>Carregando cupons…</div>
+            <LoadingBlock message="Carregando cupons…" />
           ) : cupons.length === 0 ? (
             <EmptyState
-              icon="🏷"
+              icon={<Icon name="coupon" />}
               title="Nenhum cupom criado ainda"
               hint="Crie cupons de desconto para impulsionar as vendas do seu evento."
               action={

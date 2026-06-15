@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
+import { Icon } from "../components/Icon";
 import { Logo } from "../components/Logo";
 import { PageTransition } from "../components/PageTransition";
 import { firstName, initials, useCurrentUser } from "../lib/auth-store";
@@ -48,7 +49,7 @@ export const ParticipantLayout = () => {
 
           <form className={styles.searchWrap} onSubmit={submitSearch}>
             <span className={styles.searchIcon} aria-hidden>
-              ⌕
+              <Icon name="search" />
             </span>
             <input
               value={search}

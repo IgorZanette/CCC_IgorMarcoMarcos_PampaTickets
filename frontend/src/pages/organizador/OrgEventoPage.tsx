@@ -15,8 +15,10 @@ import {
 import { AddressAutocomplete } from "../../components/AddressAutocomplete";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { EventMap } from "../../components/EventMap";
+import { Icon } from "../../components/Icon";
 import { MetricCard } from "../../components/MetricCard";
 import { PageHeader } from "../../components/PageHeader";
+import { LoadingBlock, Spinner } from "../../components/Spinner";
 import { StatusPill } from "../../components/StatusPill";
 import { extractErrorMessage } from "../../lib/errors";
 import { toastSuccess } from "../../lib/toast";
@@ -87,7 +89,12 @@ export const OrgEventoPage = () => {
     };
   }, [id]);
 
-  if (loading && !ev) return <div className={shared.body}>Carregando…</div>;
+  if (loading && !ev)
+    return (
+      <div className={shared.body}>
+        <LoadingBlock message="Carregando evento…" />
+      </div>
+    );
 
   if (!ev || notFound) {
     return (
@@ -236,7 +243,7 @@ export const OrgEventoPage = () => {
             className={shared.cardPadded}
             style={{ borderColor: "#c8102e", color: "#c8102e", marginBottom: 16 }}
           >
-            ⚠ {error}
+            <Icon name="warning" /> {error}
           </div>
         )}
 
@@ -261,8 +268,16 @@ export const OrgEventoPage = () => {
             </div>
           )}
           {!resumoError && resumo === null && (
-            <div style={{ marginTop: 12, color: "var(--pt-org-text-dim)" }}>
-              Carregando métricas…
+            <div
+              style={{
+                marginTop: 12,
+                color: "var(--pt-org-text-dim)",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <Spinner size={18} /> Carregando métricas…
             </div>
           )}
           {resumo && (
@@ -389,7 +404,7 @@ export const OrgEventoPage = () => {
                   fontSize: 13,
                 }}
               >
-                ⚠ {editError}
+                <Icon name="warning" /> {editError}
               </div>
             )}
 

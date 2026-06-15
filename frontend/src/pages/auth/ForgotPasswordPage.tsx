@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { solicitarRecuperacaoSenha } from "../../api/auth";
 import { extractErrorMessage } from "../../lib/errors";
+import { Icon } from "../../components/Icon";
 import { AuthShell } from "./AuthShell";
 import forms from "./forms.module.css";
 
@@ -58,7 +59,7 @@ export const ForgotPasswordPage = () => {
       >
         <div style={{ textAlign: "center", padding: "20px 0" }}>
           <p style={{ color: "var(--pt-success)", fontSize: 14, fontWeight: 600 }}>
-            ✓ Solicitação registrada para {email}
+            <Icon name="check" /> Solicitação registrada para {email}
           </p>
         </div>
       </AuthShell>
@@ -94,7 +95,11 @@ export const ForgotPasswordPage = () => {
             autoFocus
           />
         </div>
-        {error && <div className={forms.error}>⚠ {error}</div>}
+        {error && (
+          <div className={forms.error}>
+            <Icon name="warning" /> {error}
+          </div>
+        )}
         <button type="submit" className={forms.primary} disabled={loading}>
           {loading ? "Enviando…" : "Enviar Código →"}
         </button>

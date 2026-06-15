@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 
 import { buscarEnderecos, type GeoResult } from "../lib/geocode";
 import { EventMap } from "./EventMap";
+import { Icon } from "./Icon";
 import styles from "./AddressAutocomplete.module.css";
 
 export type EnderecoSelecionado = {
@@ -116,7 +117,7 @@ export const AddressAutocomplete = ({
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => escolher(s)}
                 >
-                  📍 {s.display_name}
+                  <Icon name="pin" /> {s.display_name}
                 </button>
               </li>
             ))}
@@ -135,7 +136,7 @@ export const AddressAutocomplete = ({
             target="_blank"
             rel="noreferrer"
           >
-            Abrir no mapa ↗
+            Abrir no mapa <Icon name="external" />
           </a>
         </div>
       )}

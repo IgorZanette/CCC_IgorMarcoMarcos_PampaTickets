@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import { criarEvento, gradientFor, type Evento } from "../../api/eventos";
 import { AddressAutocomplete } from "../../components/AddressAutocomplete";
+import { Icon } from "../../components/Icon";
 import { PageHeader } from "../../components/PageHeader";
 import { localToUtcIso } from "../../lib/format";
 import { toastError, toastSuccess } from "../../lib/toast";
@@ -159,7 +160,9 @@ export const CreateEventPage = () => {
 
           <aside>
             <div className={styles.preview}>
-              <div className={styles.previewHead}>👁 Preview</div>
+              <div className={styles.previewHead}>
+                <Icon name="eye" /> Preview
+              </div>
               <div
                 className={styles.previewCover}
                 style={{ background: gradientFor(previewId) }}
@@ -169,10 +172,10 @@ export const CreateEventPage = () => {
                   {nome || "Nome do evento"}
                 </div>
                 <div className={styles.previewMeta}>
-                  📅 {dataInicio || "Data de início"}
+                  <Icon name="calendar" /> {dataInicio || "Data de início"}
                 </div>
                 <div className={styles.previewMeta}>
-                  📍 {local || "Local"}
+                  <Icon name="pin" /> {local || "Local"}
                 </div>
               </div>
             </div>

@@ -30,7 +30,7 @@ export const ConfirmarEmailPage = () => {
     try {
       await confirmarEmail({ email, codigo });
       const usuario = await login({ email, senha });
-      toastSuccess("Conta confirmada! Bem-vindo ao PampaTickets 🎉");
+      toastSuccess("Conta confirmada! Bem-vindo ao PampaTickets");
       navigate(usuario.perfil === "ORGANIZADOR" ? "/organizador" : "/inicio");
     } catch (err: unknown) {
       toastError(err, "Código inválido ou expirado.");

@@ -5,6 +5,8 @@ import { obterEvento, type Evento } from "../../api/eventos";
 import { listarLotes, type Lote } from "../../api/lotes";
 import { criarPedido, type MetodoPagamento } from "../../api/pedidos";
 import { validarCupom, type CupomValidacao } from "../../api/cupons";
+import { Icon } from "../../components/Icon";
+import { LoadingBlock } from "../../components/Spinner";
 import { useCurrentUser } from "../../lib/auth-store";
 import { extractErrorMessage } from "../../lib/errors";
 import { dateLong, formatCelular, formatCpfCnpj, money } from "../../lib/format";
@@ -89,7 +91,7 @@ export const CheckoutPage = () => {
 
   if (error) return <div className={styles.empty}>{error}</div>;
   if (!ev || !lotes || !pending)
-    return <div className={styles.empty}>Carregando…</div>;
+    return <LoadingBlock message="Carregando checkout…" />;
 
   const lotePorId = new Map(lotes.map((l) => [l.id, l] as const));
 
@@ -265,7 +267,7 @@ export const CheckoutPage = () => {
               {cupom ? (
                 <div className={styles.cupomAplicado}>
                   <span>
-                    ✓ <strong>{cupom.codigo}</strong> aplicado
+                    <Icon name="check" /> <strong>{cupom.codigo}</strong> aplicado
                   </span>
                   <button
                     type="button"
@@ -295,7 +297,11 @@ export const CheckoutPage = () => {
                   </button>
                 </div>
               )}
-              {cupomErro && <div className={styles.cupomErro}>⚠ {cupomErro}</div>}
+              {cupomErro && (
+                <div className={styles.cupomErro}>
+                  <Icon name="warning" /> {cupomErro}
+                </div>
+              )}
             </div>
 
             {cupom && (
@@ -317,7 +323,7 @@ export const CheckoutPage = () => {
             </div>
             {bloqueado && (
               <div className={styles.errorMsg}>
-                ⚠ Alguns itens não estão mais disponíveis:
+                <Icon name="warning" /> Alguns itens não estão mais disponíveis:
                 {itensIndisponiveis.map((it, i) => (
                   <div key={i}>
                     • {it.nome} — {it.motivo}
@@ -328,7 +334,11 @@ export const CheckoutPage = () => {
                 </Link>
               </div>
             )}
-            {error && <div className={styles.errorMsg}>⚠ {error}</div>}
+            {error && (
+              <div className={styles.errorMsg}>
+                <Icon name="warning" /> {error}
+              </div>
+            )}
             <button
               type="button"
               className={styles.cta}
@@ -338,7 +348,7 @@ export const CheckoutPage = () => {
               {submitting ? "Criando pedido…" : "Confirmar pagamento"}
             </button>
             <div className={styles.secure}>
-              🔒 Conexão segura · Asaas Gateway
+              <Icon name="lock" /> Conexão segura · Asaas Gateway
             </div>
           </div>
         </aside>

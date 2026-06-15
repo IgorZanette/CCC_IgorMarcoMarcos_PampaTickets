@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { Icon } from "./Icon";
 import styles from "./EmptyState.module.css";
 
 type EmptyStateProps = {
@@ -11,7 +12,12 @@ type EmptyStateProps = {
 
 // Estado vazio com ícone + título + dica e CTA opcional — substitui os
 // "Nenhum…" de texto puro nas listagens, deixando o vazio mais acolhedor.
-export const EmptyState = ({ icon = "✨", title, hint, action }: EmptyStateProps) => (
+export const EmptyState = ({
+  icon = <Icon name="sparkle" />,
+  title,
+  hint,
+  action,
+}: EmptyStateProps) => (
   <div className={styles.wrap}>
     <div className={styles.icon} aria-hidden>
       {icon}

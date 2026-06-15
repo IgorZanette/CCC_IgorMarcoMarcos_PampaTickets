@@ -7,6 +7,7 @@ import {
   type Ingresso,
 } from "../../api/ingressos";
 import { reembolsarPedido } from "../../api/pedidos";
+import { Icon } from "../../components/Icon";
 import { Modal } from "../../components/Modal";
 import { SkeletonGrid } from "../../components/Skeleton";
 import { StatusPill } from "../../components/StatusPill";
@@ -90,7 +91,8 @@ export const MyTicketsPage = () => {
         <div className={styles.avatar}>{user ? initials(user.nome) : "?"}</div>
         <div>
           <h1 className={styles.title}>
-            Olá, {user ? user.nome.split(/\s+/)[0] : "visitante"} 👋
+            Olá, {user ? user.nome.split(/\s+/)[0] : "visitante"}{" "}
+            <Icon name="wave" />
           </h1>
           <div className={styles.email}>
             {user
@@ -223,10 +225,14 @@ const IngressoRow = ({
         <div className={styles.rowTitle}>{ing.evento_nome}</div>
         <div className={styles.rowMeta}>
           <span>
-            📅 {d.semana}, {d.dia} {d.mes} · {d.hora}
+            <Icon name="calendar" /> {d.semana}, {d.dia} {d.mes} · {d.hora}
           </span>
-          <span>📍 {ing.evento_local}</span>
-          <span>🎟 {ing.lote_nome}</span>
+          <span>
+            <Icon name="pin" /> {ing.evento_local}
+          </span>
+          <span>
+            <Icon name="ticket" /> {ing.lote_nome}
+          </span>
           <span className="pt-mono">#{ing.id.slice(0, 8)}</span>
         </div>
       </div>
@@ -259,7 +265,7 @@ const IngressoRow = ({
         )}
         {reembolsoSolicitado ? (
           <span className={styles.refundPending}>
-            ↩ Reembolso solicitado · aguardando confirmação
+            <Icon name="refund" /> Reembolso solicitado · aguardando confirmação
           </span>
         ) : (
           onReembolso && (

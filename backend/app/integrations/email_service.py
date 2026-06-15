@@ -2,6 +2,7 @@
 
 import smtplib
 from email.mime.application import MIMEApplication
+from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -185,13 +186,28 @@ async def enviar_ingresso_por_email(
     data_evento_str: str,
     pdf_bytes: bytes,
     nome_pdf: str,
+    qr_png_bytes: bytes | None = None,
 ) -> bool:
-    """Envia email com PDF do ingresso em anexo."""
+    """Envia email com o ingresso: PDF em anexo e, quando disponível, o QR Code
+    embutido no corpo (imagem inline via Content-ID) para escaneamento direto."""
     try:
         msg = MIMEMultipart("mixed")
         msg["Subject"] = f"Seu ingresso para {nome_evento} - PampaTickets"
         msg["From"] = f"{settings.EMAIL_FROM_NAME} <{settings.EMAIL_FROM}>"
         msg["To"] = email_destino
+
+        # Bloco do QR Code inline — só entra se a imagem foi gerada.
+        qr_html = ""
+        if qr_png_bytes:
+            qr_html = """\
+                    <div style="text-align: center; margin: 24px 0;">
+                        <img src="cid:qringresso" alt="QR Code do ingresso" width="220" height="220"
+                             style="border: 8px solid white; border-radius: 8px; background-color: white;" />
+                        <p style="color: #888; font-size: 12px; margin: 8px 0 0 0;">
+                            Apresente este QR Code na entrada do evento
+                        </p>
+                    </div>
+            """
 
         html = f"""\
         <html>
@@ -202,15 +218,16 @@ async def enviar_ingresso_por_email(
                         Olá <strong>{nome_usuario}</strong>,
                     </p>
                     <p style="color: #666; font-size: 14px;">
-                        Seu pagamento foi confirmado. Segue em anexo o ingresso para o evento:
+                        Segue o seu ingresso para o evento:
                     </p>
                     <div style="background-color: #f0f0f0; padding: 16px; border-radius: 8px; margin: 20px 0;">
                         <p style="margin: 0; font-size: 16px; font-weight: bold; color: #333;">{nome_evento}</p>
                         <p style="margin: 4px 0 0 0; font-size: 14px; color: #666;">{data_evento_str}</p>
                     </div>
+{qr_html}
                     <p style="color: #666; font-size: 14px;">
-                        Apresente o QR Code do ingresso na entrada do evento.
-                        Você também pode acessar seus ingressos pelo site a qualquer momento.
+                        O ingresso completo também segue em anexo (PDF).
+                        Você pode acessar seus ingressos pelo site a qualquer momento.
                     </p>
                     <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
                     <p style="color: #999; font-size: 12px; text-align: center;">
@@ -226,12 +243,12 @@ async def enviar_ingresso_por_email(
 
         Olá {nome_usuario},
 
-        Seu pagamento foi confirmado. Segue em anexo o ingresso para:
+        Segue o seu ingresso para:
 
         {nome_evento}
         {data_evento_str}
 
-        Apresente o QR Code do ingresso na entrada do evento.
+        Apresente o QR Code do ingresso (no corpo do e-mail ou no PDF em anexo) na entrada do evento.
 
         © 2026 PampaTickets. Todos os direitos reservados.
         """
@@ -239,7 +256,18 @@ async def enviar_ingresso_por_email(
         corpo = MIMEMultipart("alternative")
         corpo.attach(MIMEText(text, "plain"))
         corpo.attach(MIMEText(html, "html"))
-        msg.attach(corpo)
+
+        if qr_png_bytes:
+            # multipart/related agrupa o HTML com a imagem que ele referencia por cid.
+            related = MIMEMultipart("related")
+            related.attach(corpo)
+            qr_img = MIMEImage(qr_png_bytes, _subtype="png")
+            qr_img.add_header("Content-ID", "<qringresso>")
+            qr_img.add_header("Content-Disposition", "inline", filename="qrcode.png")
+            related.attach(qr_img)
+            msg.attach(related)
+        else:
+            msg.attach(corpo)
 
         anexo = MIMEApplication(pdf_bytes, Name=nome_pdf)
         anexo["Content-Disposition"] = f'attachment; filename="{nome_pdf}"'

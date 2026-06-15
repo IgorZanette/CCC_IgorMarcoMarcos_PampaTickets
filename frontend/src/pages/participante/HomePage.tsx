@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 
 import { gradientFor, listarEventos, type Evento } from "../../api/eventos";
 import { EventCard } from "../../components/EventCard";
+import { Icon } from "../../components/Icon";
 import { Skeleton } from "../../components/Skeleton";
 import { extractErrorMessage } from "../../lib/errors";
 import { dateLong } from "../../lib/format";
@@ -68,11 +69,17 @@ export const HomePage = () => {
         >
           <div className={styles.heroOverlay} />
           <div className={styles.heroContent}>
-            <span className={styles.heroEyebrow}>⚡ Em destaque</span>
+            <span className={styles.heroEyebrow}>
+              <Icon name="bolt" /> Em destaque
+            </span>
             <h1 className={styles.heroTitle}>{featured.nome}</h1>
             <div className={styles.heroMeta}>
-              <span>📅 {dateLong(featured.data_inicio)}</span>
-              <span>📍 {featured.local}</span>
+              <span>
+                <Icon name="calendar" /> {dateLong(featured.data_inicio)}
+              </span>
+              <span>
+                <Icon name="pin" /> {featured.local}
+              </span>
             </div>
             <div className={styles.heroActions}>
               <span className={styles.heroPrimary}>Comprar ingressos →</span>
@@ -83,14 +90,22 @@ export const HomePage = () => {
       </section>
 
       <Carousel
-        title="🔥 Em alta agora"
+        title={
+          <>
+            <Icon name="flame" /> Em alta agora
+          </>
+        }
         subtitle="Os destaques desta semana"
         events={trending}
       />
 
       {week.length > 0 && (
         <Carousel
-          title="📅 Esta semana"
+          title={
+            <>
+              <Icon name="calendar" /> Esta semana
+            </>
+          }
           subtitle="Não perca o que vem aí"
           events={week}
         />
@@ -104,7 +119,7 @@ const Carousel = ({
   subtitle,
   events,
 }: {
-  title: string;
+  title: ReactNode;
   subtitle: string;
   events: Evento[];
 }) => (

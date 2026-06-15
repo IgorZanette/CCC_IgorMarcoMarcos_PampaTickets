@@ -7,6 +7,7 @@ import {
   listarEventos,
   type Evento,
 } from "../../api/eventos";
+import { Icon } from "../../components/Icon";
 import { SkeletonGrid } from "../../components/Skeleton";
 import { extractErrorMessage } from "../../lib/errors";
 import { dateFull } from "../../lib/format";
@@ -66,7 +67,9 @@ export const SearchPage = () => {
   return (
     <div className={styles.page}>
       <div className={styles.searchBar}>
-        <span className={styles.searchIcon}>⌕</span>
+        <span className={styles.searchIcon}>
+          <Icon name="search" />
+        </span>
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -161,7 +164,9 @@ const ResultCard = ({ ev }: { ev: Evento }) => {
       <div className={styles.resultBody}>
         <div className={styles.resultTitle}>{ev.nome}</div>
         <div className={styles.resultMeta}>
-          <span>📍 {cidadeFromLocal(ev.local)}</span>
+          <span>
+            <Icon name="pin" /> {cidadeFromLocal(ev.local)}
+          </span>
           <span>
             {d.semana} · {d.hora}
           </span>

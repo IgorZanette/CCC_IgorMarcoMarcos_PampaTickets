@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 
 import { gradientFor, type Evento } from "../api/eventos";
 import { dateFull } from "../lib/format";
+import { Icon } from "./Icon";
 import styles from "./EventCard.module.css";
 
 type Props = {
@@ -23,7 +24,9 @@ export const EventCard = ({ ev, to }: Props) => {
         </div>
         <div className={styles.info}>
           <div className={styles.title}>{ev.nome}</div>
-          <div className={styles.meta}>📍 {ev.local}</div>
+          <div className={styles.meta}>
+            <Icon name="pin" /> {ev.local}
+          </div>
         </div>
       </div>
     </Link>

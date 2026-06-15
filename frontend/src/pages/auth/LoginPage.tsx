@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { login, reenviarConfirmacao } from "../../api/auth";
 import { extractErrorMessage } from "../../lib/errors";
 import { toastInfo } from "../../lib/toast";
+import { Icon } from "../../components/Icon";
 import { AuthShell } from "./AuthShell";
 import forms from "./forms.module.css";
 
@@ -94,7 +95,11 @@ export const LoginPage = () => {
             required
           />
         </div>
-        {error && <div className={forms.error}>⚠ {error}</div>}
+        {error && (
+          <div className={forms.error}>
+            <Icon name="warning" /> {error}
+          </div>
+        )}
         <button type="submit" className={forms.primary} disabled={loading}>
           {loading ? "Entrando…" : "Entrar →"}
         </button>

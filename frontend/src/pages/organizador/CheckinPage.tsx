@@ -7,7 +7,9 @@ import {
   type IngressoOrganizador,
 } from "../../api/ingressos";
 import { EmptyState } from "../../components/EmptyState";
+import { Icon } from "../../components/Icon";
 import { PageHeader } from "../../components/PageHeader";
+import { LoadingBlock } from "../../components/Spinner";
 import { StatusPill } from "../../components/StatusPill";
 import type { OrgOutlet } from "../../layouts/OrganizerLayout";
 import { extractErrorMessage } from "../../lib/errors";
@@ -160,7 +162,7 @@ export const CheckinPage = () => {
             className={shared.cardPadded}
             style={{ borderColor: "var(--pt-danger)", color: "var(--pt-danger)" }}
           >
-            ⚠ {error}
+            <Icon name="warning" /> {error}
           </div>
         )}
 
@@ -186,16 +188,16 @@ export const CheckinPage = () => {
           )}
 
           {filtrados === null ? (
-            <div className={styles.loadingBox}>Carregando participantes…</div>
+            <LoadingBlock message="Carregando participantes…" />
           ) : ingressos !== null && ingressos.length === 0 ? (
             <EmptyState
-              icon="🎫"
+              icon={<Icon name="ticket" />}
               title="Nenhum ingresso vendido ainda"
               hint="Quando houver vendas, os participantes aparecerão aqui para check-in."
             />
           ) : filtrados.length === 0 ? (
             <EmptyState
-              icon="🔍"
+              icon={<Icon name="search" />}
               title="Nenhum participante encontrado"
               hint={`Não há resultados para "${busca}".`}
             />
@@ -250,7 +252,7 @@ export const CheckinPage = () => {
                           {checkingHash === i.qr_code_hash
                             ? "Validando…"
                             : jaUsado
-                              ? "✓ Presente"
+                              ? <><Icon name="check" /> Presente</>
                               : "Check-in"}
                         </button>
                       </td>
@@ -317,7 +319,7 @@ export const CheckinPage = () => {
                       className={styles.streamMark}
                       data-ok={p.ok ? "1" : undefined}
                     >
-                      {p.ok ? "✓" : "✗"}
+                      <Icon name={p.ok ? "check" : "close"} />
                     </div>
                     <div className={styles.streamInfo}>
                       <div className={styles.streamName}>{p.message}</div>

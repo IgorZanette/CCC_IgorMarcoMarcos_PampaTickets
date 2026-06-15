@@ -13,8 +13,10 @@ import {
 } from "../../api/lotes";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { EmptyState } from "../../components/EmptyState";
+import { Icon } from "../../components/Icon";
 import { Modal } from "../../components/Modal";
 import { PageHeader } from "../../components/PageHeader";
+import { LoadingBlock } from "../../components/Spinner";
 import { ProgressBar } from "../../components/ProgressBar";
 import { StatusPill } from "../../components/StatusPill";
 import type { OrgOutlet } from "../../layouts/OrganizerLayout";
@@ -133,7 +135,7 @@ export const LotesPage = () => {
             className={shared.cardPadded}
             style={{ borderColor: "#c8102e", color: "#c8102e", marginBottom: 16 }}
           >
-            ⚠ {error}
+            <Icon name="warning" /> {error}
           </div>
         )}
 
@@ -254,12 +256,10 @@ export const LotesPage = () => {
 
         <div className={shared.card}>
           {lotes === null ? (
-            <div style={{ padding: 32, textAlign: "center", color: "var(--pt-org-text-dim)" }}>
-              Carregando lotes…
-            </div>
+            <LoadingBlock message="Carregando lotes…" />
           ) : lotes.length === 0 ? (
             <EmptyState
-              icon="🎟"
+              icon={<Icon name="ticket" />}
               title="Nenhum lote criado ainda"
               hint="Crie o primeiro lote para começar a vender ingressos deste evento."
               action={

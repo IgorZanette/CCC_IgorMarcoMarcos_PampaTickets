@@ -8,6 +8,19 @@
 ## Última atualização
 
 **Data:** 14/06/2026
+**Responsável:** Igor Zanette (QR Code do ingresso no corpo do e-mail + e-mail nas cortesias)
+
+> **QR Code inline no e-mail do ingresso (14/06/2026)** — `email_service.enviar_ingresso_por_email` em [app/integrations/email_service.py](../app/integrations/email_service.py) ganhou parâmetro opcional `qr_png_bytes`. Quando presente, o e-mail vira `multipart/mixed` contendo um `multipart/related` (HTML + imagem do QR referenciada por `cid:qringresso`) e o PDF como anexo — assim o participante vê e escaneia o QR direto no corpo, sem abrir o PDF. Sem `qr_png_bytes`, mantém o comportamento antigo (só anexo). Import novo: `MIMEImage`.
+>
+> **Builder de payload reaproveitável (14/06/2026)** — `ingresso_service.enviar_email_ingresso` foi dividido: novo `montar_email_ingresso(db, ingresso_id)` carrega o ingresso, gera PDF + QR PNG (`branding.gerar_qrcode_image(qr_code_hash)`) em memória e devolve os kwargs prontos para o envio. `enviar_email_ingresso` apenas monta o payload e envia (best-effort, swallow). Separação permite agendar o SMTP em background **sem** depender da sessão do banco (que fecha ao fim do request).
+>
+> **Cortesias passam a enviar o ingresso por e-mail (14/06/2026)** — antes `cortesia_service.emitir` gerava o PDF mas nunca enviava e-mail ao beneficiado. Agora `emitir` recebe `background_tasks: BackgroundTasks | None`; monta o payload ainda com a sessão aberta e agenda `email_service.enviar_ingresso_por_email` em background (não bloqueia a resposta do organizador no SMTP). Rota `POST /eventos/{evento_id}/cortesias` em [app/api/routes/cortesias.py](../app/api/routes/cortesias.py) injeta `BackgroundTasks` e repassa. O fluxo de ingresso **pago** (webhook Asaas `PAYMENT_CONFIRMED`/`RECEIVED` → `_enviar_emails_ingressos`) já existia e segue inalterado — apenas agora também leva o QR inline. **Testes do webhook (8) passando**; lint ok.
+
+---
+
+## Última atualização (anterior)
+
+**Data:** 14/06/2026
 **Responsável:** Marco Antonio Santolin (UC08 — Galeria de Fotos, v1 grátis)
 
 > **UC08 — Galeria de Fotos (14/06/2026)** — último UC entregue, espelhando o padrão repo→service→route de cortesias. **Decisão**: galeria **grátis** (`preco=0`; `CompraFoto` reservado p/ fase paga) e **visualização exige login** (diverge do plano original, que previa público) — por isso o bucket `fotos` é **privado** e a listagem devolve **URLs assinadas** (`criar_signed_url`), não públicas. Backend: [foto_repo.py](../app/repositories/foto_repo.py), [foto_service.py](../app/service/foto_service.py) (valida posse/tipo 422/tamanho 413), [schemas/foto.py](../app/schemas/foto.py), [routes/fotos.py](../app/api/routes/fotos.py) (`POST` organizador com upload múltiplo, `GET` login, `DELETE` dono); 3 settings em `config.py` (`SUPABASE_BUCKET_FOTOS`, `MAX_FOTO_SIZE_MB`, `ALLOWED_FOTO_TYPES`) e 3 métodos no `supabase_storage` (`upload_foto_evento`, `criar_signed_url`, `remover_foto`). Sem migration (tabelas já existiam); sem Pillow (thumbnail = original). **156 testes** (7 novos em `test_foto_service.py`, storage mockado). **Pendência de deploy**: criar o bucket privado `fotos` no Supabase. Frontend: `OrgFotosPage` (item "Galeria" no `EVENT_NAV`) + seção na `EventoPage` (grid p/ logados, aviso de login p/ deslogados). Também corrigidos 2 testes de reembolso do frontend que estavam vermelhos no CI desde o refactor de UX (Modal animado + erro via toast) — pré-existentes, não-UC08.

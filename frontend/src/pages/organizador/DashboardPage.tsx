@@ -7,6 +7,7 @@ import {
   type Evento,
 } from "../../api/eventos";
 import { EmptyState } from "../../components/EmptyState";
+import { Icon } from "../../components/Icon";
 import { PageHeader } from "../../components/PageHeader";
 import { SkeletonGrid } from "../../components/Skeleton";
 import { StatusPill } from "../../components/StatusPill";
@@ -46,7 +47,12 @@ export const DashboardPage = () => {
 
   const abrir = (id: string) => navigate(`/organizador/eventos/${id}`);
 
-  const titulo = `${greeting()}, ${user ? firstName(user.nome) : "organizador"} 👋`;
+  const titulo = (
+    <>
+      {greeting()}, {user ? firstName(user.nome) : "organizador"}{" "}
+      <Icon name="wave" />
+    </>
+  );
 
   return (
     <>
@@ -78,7 +84,7 @@ export const DashboardPage = () => {
           )}
           {!error && eventos?.length === 0 && (
             <EmptyState
-              icon="🎪"
+              icon={<Icon name="tent" />}
               title="Você ainda não criou nenhum evento"
               hint="Publique seu primeiro evento e comece a vender ingressos em minutos."
               action={
@@ -112,9 +118,11 @@ export const DashboardPage = () => {
                       <StatusPill status={ev.status} />
                     </div>
                     <div className={styles.eventMeta}>
-                      📅 {dateLong(ev.data_inicio)}
+                      <Icon name="calendar" /> {dateLong(ev.data_inicio)}
                     </div>
-                    <div className={styles.eventMeta}>📍 {ev.local}</div>
+                    <div className={styles.eventMeta}>
+                      <Icon name="pin" /> {ev.local}
+                    </div>
                   </div>
                 </button>
               ))}

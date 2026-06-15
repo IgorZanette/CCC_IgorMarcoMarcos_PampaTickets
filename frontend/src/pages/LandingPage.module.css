@@ -1,4 +1,5 @@
 .page {
+  position: relative;
   min-height: 100vh;
   background: radial-gradient(
       circle at 80% -20%,
@@ -15,6 +16,25 @@
   display: flex;
   flex-direction: column;
   font-family: var(--pt-font-sans);
+  overflow: hidden;
+}
+
+/* Camada do pampa: atrás de tudo, sem capturar cliques */
+.pampaBackdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Conteúdo sempre acima da camada translúcida */
+.header,
+.hero,
+.features,
+.footer {
+  position: relative;
+  z-index: 1;
 }
 
 .header {
@@ -66,7 +86,9 @@
 }
 
 .eyebrow {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   background: var(--pt-bg-card);
   border: 1px solid var(--pt-border);
   color: var(--pt-accent);
@@ -164,6 +186,166 @@
   flex-shrink: 0;
 }
 
+.scrollHint {
+  margin-top: 40px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pt-text-dim);
+  transition: color var(--pt-t-fast);
+}
+
+.scrollHint:hover {
+  color: var(--pt-accent);
+}
+
+/* ── Seção de funcionalidades ─────────────────────────────── */
+.features {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 56px 32px 32px;
+}
+
+.featuresHead {
+  text-align: center;
+  max-width: 720px;
+  margin: 0 auto 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.featuresTitle {
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  margin: 0;
+}
+
+.featuresLead {
+  font-size: 16px;
+  color: var(--pt-text-dim);
+  line-height: 1.55;
+  text-wrap: balance;
+  margin: 0;
+}
+
+.personaBlock {
+  margin-bottom: 56px;
+}
+
+.personaHeader {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--pt-border);
+}
+
+.personaTag {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--pt-accent-on);
+  background: var(--pt-accent);
+  padding: 6px 14px;
+  border-radius: var(--pt-r-pill);
+}
+
+.personaTagGold {
+  background: var(--pt-accent-hot);
+}
+
+.personaSub {
+  font-size: 14px;
+  color: var(--pt-text-dim);
+  margin: 0;
+}
+
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.featureCard {
+  background: var(--pt-bg-card);
+  border: 1px solid var(--pt-border);
+  border-radius: var(--pt-r-xl);
+  padding: 22px;
+  transition: transform var(--pt-t-fast), border-color var(--pt-t-fast);
+}
+
+.featureCard:hover {
+  transform: translateY(-3px);
+  border-color: var(--pt-accent);
+}
+
+.featureIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--pt-r-lg);
+  background: var(--pt-accent-soft);
+  color: var(--pt-accent);
+  margin-bottom: 14px;
+}
+
+.featureIcon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.featureTitle {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+
+.featureDesc {
+  font-size: 14px;
+  color: var(--pt-text-dim);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.techBand {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px 24px;
+  margin-top: 8px;
+  padding: 24px;
+  background: var(--pt-bg-card);
+  border: 1px solid var(--pt-border);
+  border-radius: var(--pt-r-2xl);
+}
+
+.techItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pt-text-dim);
+}
+
+.techItem svg {
+  width: 18px;
+  height: 18px;
+  color: var(--pt-accent);
+}
+
 .footer {
   display: flex;
   justify-content: space-between;
@@ -172,4 +354,28 @@
   color: var(--pt-text-dim);
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+@media (max-width: 640px) {
+  .header {
+    padding: 20px 24px;
+  }
+
+  .title {
+    font-size: 40px;
+  }
+
+  .features {
+    padding: 40px 20px 24px;
+  }
+
+  .featuresTitle {
+    font-size: 28px;
+  }
+
+  .footer {
+    padding: 20px 24px;
+    flex-direction: column;
+    gap: 6px;
+  }
 }

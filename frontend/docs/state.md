@@ -8,6 +8,39 @@
 ## Última atualização
 
 **Data:** 14/06/2026
+**Responsável:** Igor Zanette (raio dourado, loader próprio e fundo do pampa)
+
+> **Faísca da marca virou raio (14/06/2026)** — o `Spark` em [src/components/Icon.tsx](../src/components/Icon.tsx) deixou de ser uma estrela de 4 pontas e passou a ser um **raiozinho** (⚡, mesmo formato do `bolt`/selo), desenhado num box normalizado `[-1,1]` e posicionado via `transform translate+scale` (mantendo a API `spark?: [x,y,s]` dos ícones de feature). No eyebrow da landing (`PampaTickets · CCC · UPF`), o `bolt` agora é **dourado** via `style={{ color: "var(--pt-accent-hot)" }}` (antes herdava o verde).
+>
+> **Loader próprio `Spinner` (14/06/2026)** — [src/components/Spinner.tsx](../src/components/Spinner.tsx) + `.module.css`: anel verde-pampa girando (`pt-spin`) com o **raio dourado piscando** no centro (`pt-flicker`, respeita `prefers-reduced-motion`). Exporta `Spinner` (ícone, prop `size`/`label`) e `LoadingBlock` (spinner + mensagem centralizados). Aplicado nos pontos de espera: `PagamentoStatusPage` (aguardando — substituiu o `.spinner` CSS antigo, removidas as regras `@keyframes spin`/border) e todos os "Carregando…" antes em texto puro (participante: Tickets, Checkout, Evento + galeria inline; organizador: Dashboard via skeleton mantido, OrgEvento principal + métricas inline, Attendees, Cortesias, Finance, OrgFotos, Checkin, Cupons, Lotes).
+>
+> **Fundo translúcido e cultural do pampa na landing (14/06/2026)** — [src/components/PampaBackdrop.tsx](../src/components/PampaBackdrop.tsx) + `.module.css`. Conta a história da marca **só nas bordas/cantos vazios** (centro livre pro conteúdo — 1ª versão centralizada foi rejeitada por ficar atrás do texto): (1) **globo dourado** saindo do canto superior-direito com meridianos/paralelos + **constelação de raios** descendo pro vão lateral = o mundo que a plataforma quer alcançar e os eventos se conectando; (2) **coxilhas + relevos convergindo ao horizonte** na faixa inferior (área do rodapé), apontando ao globo = a assinatura da logo PampaTickets, "do pampa pro mundo"; (3) **chimarrão** no canto inferior-esquerdo = cultura gaúcha (easter egg). Verde-pampa via `currentColor`, dourado via `style`; opacidades 0.04–0.11; cada peça posicionada por classe com `clamp()` e recolhida em `@media (max-width:860px)`. Renderizado em `.pampaBackdrop` (`absolute; inset:0; z-index:0; pointer-events:none`) atrás do conteúdo; `.page` é `position:relative; overflow:hidden` e `.header/.hero/.features/.footer` têm `z-index:1`. Fundamentado no DVP (logo = ingresso + "P" do Pampa + relevos das coxilhas; identidade gaúcha do RS com ambição global). `tsc`, eslint, `vite build` e 35 testes ok; conferido por screenshot (raio dourado no ícone, eyebrow dourado, spinner, globo no canto, coxilhas e chimarrão sutis).
+
+---
+
+## Última atualização (anterior)
+
+**Data:** 14/06/2026
+**Responsável:** Igor Zanette (set de ícones próprios — zero emojis genéricos no site)
+
+> **Componente `Icon` único da plataforma (14/06/2026)** — todos os emojis/glifos genéricos (📍📅🎟💳📄👋🎉🔥🔒🔍🎫📷🎪🏷👁👥⚡ e símbolos ✓ ✕ ✗ ⚠ ⏳ ⌕ ★ ◐ ◇ ✦ ✨ ☰ ⏻ ↩ ↗) foram substituídos por SVGs próprios em [src/components/Icon.tsx](../src/components/Icon.tsx). Linguagem visual coesa: pictograma em traço `currentColor` (herda a cor do contexto — verde, vermelho de erro, âmbar de aviso) e a **faísca dourada da marca** (o ⚡ do selo) como prop opcional `spark`, usada só nos cards da landing; ícones utilitários ficam limpos. Tamanho padrão `1em` (acompanha o `font-size`), com `size` para fixar px. 36 ícones nomeados (`IconName`). O antigo `FeatureIcon.tsx` foi removido e a landing migrou para `<Icon ... spark />`.
+>
+> **Cobertura (14/06/2026)** — substituições aplicadas em: layouts (`OrganizerLayout` nav + logout, `ParticipantLayout` busca), componentes (`EmptyState` default, `EventCard`, `AddressAutocomplete`), todas as páginas `auth/*` (erro/sucesso), participante (`HomePage`, `SearchPage`, `MyTicketsPage`, `TicketsPage`, `EventoPage`, `CheckoutPage`, `PagamentoStatusPage`) e organizador (`DashboardPage`, `CreateEventPage`, `CheckinPage`, `CuponsPage`, `CortesiasPage`, `OrgFotosPage`, `LotesPage`, `FinancePage`, `AttendeesPage`, `OrgEventoPage`). Setas tipográficas (→ ← ↑ ↓) e os ↑↓ de delta do `MetricCard` foram mantidos por serem texto, não ícones. Emoji 🎉 do toast de confirmação removido (sonner já tem ícone de sucesso). `tsc`, eslint (`src`), `vite build` e os 35 testes (vitest) passando; conferido por screenshot.
+
+---
+
+## Última atualização (anterior)
+
+**Data:** 14/06/2026
+**Responsável:** Igor Zanette (landing page com todas as funcionalidades do sistema)
+
+> **Landing page de funcionalidades (14/06/2026)** — [src/pages/LandingPage.tsx](../src/pages/LandingPage.tsx) deixou de ser só o hero e ganhou uma seção `#funcionalidades` apresentando **todos os recursos do sistema agrupados por persona** (serve de apoio à apresentação, dispensando slides). Estrutura data-driven: arrays `featuresParticipante` (8 cards) e `featuresOrganizador` (8 cards), cada item `{ icon, title, desc }`, renderizados por um componente local `FeatureCard`. Cobre vitrine/busca, compra, PIX/boleto/cartão, ingresso por e-mail com QR, meus ingressos, reembolso, certificado, galeria (participante) e gestão de eventos, lotes, cupons, cortesias, check-in QR, lista de participantes, relatório financeiro, galeria (organizador). Fecha com um `techBand` (JWT, confirmação de e-mail, Asaas, QR, WhatsApp). Header e hero ganharam âncoras para `#funcionalidades`. Estilos novos em [LandingPage.module.css](../src/pages/LandingPage.module.css) usando só tokens `--pt-*` do tema escuro + media query mobile. `tsc`, eslint e `vite build` ok.
+
+---
+
+## Última atualização (anterior)
+
+**Data:** 14/06/2026
 **Responsável:** Marco Antonio Santolin (dupla confirmação nas transições de evento + botão de certificado)
 
 > **Dupla confirmação nas transições de evento (14/06/2026)** — `OrgEventoPage` em [src/pages/organizador/OrgEventoPage.tsx](../src/pages/organizador/OrgEventoPage.tsx) agora exibe `ConfirmDialog` antes de executar **Publicar**, **Encerrar** e **Cancelar evento**. Estado `confirm: null | "publicar" | "encerrar" | "cancelar"` controla qual diálogo está aberto. Os botões agora chamam `setConfirm(...)` em vez de `transicionar(...)` direto. "Cancelar evento" usa `danger={true}` (botão vermelho). Reusa o componente `ConfirmDialog` já existente em `src/components/`.

@@ -11,6 +11,7 @@ from app.integrations.supabase.supabase_storage import supabase_storage
 from app.models.evento import StatusEvento
 from app.models.ingresso import Ingresso, StatusIngresso
 from app.models.usuario import Usuario
+from app.reports import branding
 from app.reports.ingresso_pdf import gerar_pdf_certificado, gerar_pdf_ingresso
 from app.repositories import certificado_repo, checkin_repo, ingresso_repo, pedido_repo
 from app.service import whatsapp_service
@@ -186,27 +187,39 @@ async def validar_checkin(
     }
 
 
+async def montar_email_ingresso(db: AsyncSession, ingresso_id: str) -> Optional[dict]:
+    """Carrega o ingresso e gera, em memória, os anexos do email (PDF + QR PNG).
+
+    Retorna os argumentos prontos para `email_service.enviar_ingresso_por_email`,
+    ou None se o ingresso não existir. Separado do envio para que o SMTP possa
+    rodar em background (BackgroundTasks) sem depender da sessão do banco.
+    """
+    ingresso = await ingresso_repo.get_with_relations(db, ingresso_id)
+    if ingresso is None:
+        return None
+
+    pdf_bytes = gerar_pdf_ingresso(ingresso).getvalue()
+    qr_png_bytes = branding.gerar_qrcode_image(ingresso.qr_code_hash).getvalue()
+
+    evento = ingresso.lote.evento
+    return {
+        "email_destino": ingresso.participante.email,
+        "nome_usuario": ingresso.participante.nome,
+        "nome_evento": evento.nome,
+        "data_evento_str": evento.data_inicio.strftime("%d/%m/%Y %H:%M"),
+        "pdf_bytes": pdf_bytes,
+        "qr_png_bytes": qr_png_bytes,
+        "nome_pdf": f"ingresso_{ingresso_id}.pdf",
+    }
+
+
 async def enviar_email_ingresso(db: AsyncSession, ingresso_id: str) -> bool:
-    """Gera PDF do ingresso em memória e envia por email ao participante."""
+    """Gera PDF + QR do ingresso em memória e envia por email ao participante."""
     try:
-        ingresso = await ingresso_repo.get_with_relations(db, ingresso_id)
-        if ingresso is None:
+        payload = await montar_email_ingresso(db, ingresso_id)
+        if payload is None:
             return False
-
-        pdf_buffer = gerar_pdf_ingresso(ingresso)
-        pdf_bytes = pdf_buffer.getvalue()
-
-        evento = ingresso.lote.evento
-        data_str = evento.data_inicio.strftime("%d/%m/%Y %H:%M")
-
-        return await email_service.enviar_ingresso_por_email(
-            email_destino=ingresso.participante.email,
-            nome_usuario=ingresso.participante.nome,
-            nome_evento=evento.nome,
-            data_evento_str=data_str,
-            pdf_bytes=pdf_bytes,
-            nome_pdf=f"ingresso_{ingresso_id}.pdf",
-        )
+        return await email_service.enviar_ingresso_por_email(**payload)
     except Exception:
         logger.exception("Falha ao enviar ingresso por email (ingresso_id={})", ingresso_id)
         return False

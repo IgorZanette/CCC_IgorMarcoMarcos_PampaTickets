@@ -2,6 +2,7 @@ import { NavLink, Outlet, useLocation, useMatch, useNavigate } from "react-route
 
 import { logout } from "../api/auth";
 import { type Evento } from "../api/eventos";
+import { Icon, type IconName } from "../components/Icon";
 import { Logo } from "../components/Logo";
 import { PageTransition } from "../components/PageTransition";
 import { StatusPill } from "../components/StatusPill";
@@ -17,15 +18,17 @@ export type OrgOutlet = {
   error: boolean;
 };
 
-const eventNavItems = (id: string) => [
-  { to: `/organizador/eventos/${id}`, label: "Visão geral", icon: "★", end: true },
-  { to: `/organizador/eventos/${id}/lotes`, label: "Lotes & vendas", icon: "◐" },
-  { to: `/organizador/eventos/${id}/cupons`, label: "Cupons", icon: "◇" },
-  { to: `/organizador/eventos/${id}/cortesias`, label: "Cortesias", icon: "✦" },
-  { to: `/organizador/eventos/${id}/fotos`, label: "Galeria", icon: "📷" },
-  { to: `/organizador/eventos/${id}/checkin`, label: "Check-in ao vivo", icon: "✓" },
-  { to: `/organizador/eventos/${id}/participantes`, label: "Participantes", icon: "👥" },
-  { to: `/organizador/eventos/${id}/financeiro`, label: "Financeiro", icon: "$" },
+const eventNavItems = (
+  id: string,
+): { to: string; label: string; icon: IconName; end?: boolean }[] => [
+  { to: `/organizador/eventos/${id}`, label: "Visão geral", icon: "grid", end: true },
+  { to: `/organizador/eventos/${id}/lotes`, label: "Lotes & vendas", icon: "layers" },
+  { to: `/organizador/eventos/${id}/cupons`, label: "Cupons", icon: "coupon" },
+  { to: `/organizador/eventos/${id}/cortesias`, label: "Cortesias", icon: "gift" },
+  { to: `/organizador/eventos/${id}/fotos`, label: "Galeria", icon: "photo" },
+  { to: `/organizador/eventos/${id}/checkin`, label: "Check-in ao vivo", icon: "qr" },
+  { to: `/organizador/eventos/${id}/participantes`, label: "Participantes", icon: "people" },
+  { to: `/organizador/eventos/${id}/financeiro`, label: "Financeiro", icon: "chart" },
 ];
 
 export const OrganizerLayout = () => {
@@ -61,7 +64,9 @@ export const OrganizerLayout = () => {
               `${styles.navItem} ${isActive ? styles.navItemActive : ""}`
             }
           >
-            <span className={styles.navIcon}>☰</span>
+            <span className={styles.navIcon}>
+              <Icon name="calendar" />
+            </span>
             Eventos
           </NavLink>
         </div>
@@ -84,7 +89,9 @@ export const OrganizerLayout = () => {
                   `${styles.navItem} ${isActive ? styles.navItemActive : ""}`
                 }
               >
-                <span className={styles.navIcon}>{n.icon}</span>
+                <span className={styles.navIcon}>
+                  <Icon name={n.icon} />
+                </span>
                 {n.label}
               </NavLink>
             ))}
@@ -107,7 +114,7 @@ export const OrganizerLayout = () => {
               aria-label="Sair"
               title="Sair"
             >
-              ⏻
+              <Icon name="power" />
             </button>
           )}
         </div>

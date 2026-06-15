@@ -10,6 +10,8 @@ import {
   type Pedido,
   type PixQrCode,
 } from "../../api/pedidos";
+import { Icon, type IconName } from "../../components/Icon";
+import { Spinner } from "../../components/Spinner";
 import { extractErrorMessage } from "../../lib/errors";
 import { dateLong, money } from "../../lib/format";
 
@@ -103,7 +105,7 @@ export const PagamentoStatusPage = () => {
   const falhou = status === "CANCELADO" || status === "REEMBOLSADO";
   const aguardando = !falhou && !pago;
 
-  const icone = pago ? "✓" : falhou ? "✕" : "⏳";
+  const icone: IconName = pago ? "check" : falhou ? "close" : "hourglass";
   const titulo = pago
     ? "Compra realizada com sucesso!"
     : falhou
@@ -133,11 +135,15 @@ export const PagamentoStatusPage = () => {
           className={styles.icon}
           data-state={pago ? "ok" : falhou ? "fail" : "wait"}
         >
-          {icone}
+          <Icon name={icone} />
         </div>
         <h1 className={styles.title}>{titulo}</h1>
         <p className={styles.lead}>{subtitulo}</p>
-        {aguardando && <div className={styles.spinner} aria-hidden />}
+        {aguardando && (
+          <div className={styles.spinner}>
+            <Spinner size={44} label="Aguardando confirmação do pagamento" />
+          </div>
+        )}
       </header>
 
       {aguardando && pixQrcode && (
@@ -180,7 +186,7 @@ export const PagamentoStatusPage = () => {
                 rel="noreferrer"
                 className={styles.payCta}
               >
-                📄 Abrir boleto
+                <Icon name="document" /> Abrir boleto
               </a>
             )}
             {boleto.identificationField && (
@@ -198,7 +204,13 @@ export const PagamentoStatusPage = () => {
                   className={styles.secondary}
                   onClick={copiarLinhaDigitavel}
                 >
-                  {copiado ? "Copiado ✓" : "Copiar linha digitável"}
+                  {copiado ? (
+                    <>
+                      Copiado <Icon name="check" />
+                    </>
+                  ) : (
+                    "Copiar linha digitável"
+                  )}
                 </button>
               </div>
             )}
@@ -222,7 +234,7 @@ export const PagamentoStatusPage = () => {
               rel="noreferrer"
               className={styles.payCta}
             >
-              💳 Pagar com cartão
+              <Icon name="card" /> Pagar com cartão
             </a>
           </div>
         </section>
@@ -248,7 +260,11 @@ export const PagamentoStatusPage = () => {
         </section>
       )}
 
-      {error && <div className={styles.errorMsg}>⚠ {error}</div>}
+      {error && (
+        <div className={styles.errorMsg}>
+          <Icon name="warning" /> {error}
+        </div>
+      )}
 
       <div className={styles.actions}>
         {aguardando &&

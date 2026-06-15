@@ -1,0 +1,48 @@
+/* Cada motivo do pampa vive numa borda/canto vazio — o centro fica livre
+   para o conteúdo. Tudo translúcido e sem capturar cliques. */
+
+.world,
+.pampa,
+.chimarrao {
+  position: absolute;
+}
+
+/* O mundo (globo) saindo do canto superior-direito */
+.world {
+  top: -150px;
+  right: -120px;
+  width: clamp(340px, 42vw, 560px);
+  height: clamp(340px, 42vw, 560px);
+}
+
+/* Coxilhas + relevos da logo na faixa inferior (área do rodapé).
+   `width:100%` é essencial: sem ele o SVG usa a largura intrínseca do
+   viewBox e não acompanha telas ultrawide. */
+.pampa {
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: clamp(240px, 26vw, 460px);
+}
+
+/* Chimarrão — easter egg no canto inferior-esquerdo */
+.chimarrao {
+  left: clamp(16px, 3vw, 44px);
+  bottom: clamp(40px, 7vh, 104px);
+  width: 110px;
+  height: 124px;
+}
+
+/* Em telas estreitas o conteúdo ocupa as laterais — recolhe os cantos */
+@media (max-width: 860px) {
+  .world {
+    top: -120px;
+    right: -130px;
+    width: 300px;
+    height: 300px;
+    opacity: 0.7;
+  }
+  .chimarrao {
+    display: none;
+  }
+}

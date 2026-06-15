@@ -11,8 +11,10 @@ import {
 import { listarLotesOrganizador, type Lote } from "../../api/lotes";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { EmptyState } from "../../components/EmptyState";
+import { Icon } from "../../components/Icon";
 import { Modal } from "../../components/Modal";
 import { PageHeader } from "../../components/PageHeader";
+import { LoadingBlock } from "../../components/Spinner";
 import { StatusPill } from "../../components/StatusPill";
 import type { OrgOutlet } from "../../layouts/OrganizerLayout";
 import { extractErrorMessage } from "../../lib/errors";
@@ -114,7 +116,7 @@ export const CortesiasPage = () => {
             className={shared.cardPadded}
             style={{ borderColor: "#c8102e", color: "#c8102e", marginBottom: 16 }}
           >
-            ⚠ {error}
+            <Icon name="warning" /> {error}
           </div>
         )}
 
@@ -194,10 +196,10 @@ export const CortesiasPage = () => {
 
         <div className={shared.card}>
           {cortesias === null ? (
-            <div className={styles.empty}>Carregando cortesias…</div>
+            <LoadingBlock message="Carregando cortesias…" />
           ) : cortesias.length === 0 ? (
             <EmptyState
-              icon="✦"
+              icon={<Icon name="gift" />}
               title="Nenhuma cortesia emitida ainda"
               hint="Emita cortesias para convidados, patrocinadores e parceiros do evento."
               action={

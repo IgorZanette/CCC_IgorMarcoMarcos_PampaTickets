@@ -4,7 +4,9 @@ import { useOutletContext, useParams } from "react-router-dom";
 import { excluirFoto, enviarFotos, listarFotos, type Foto } from "../../api/fotos";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { EmptyState } from "../../components/EmptyState";
+import { Icon } from "../../components/Icon";
 import { PageHeader } from "../../components/PageHeader";
+import { LoadingBlock } from "../../components/Spinner";
 import type { OrgOutlet } from "../../layouts/OrganizerLayout";
 import { extractErrorMessage } from "../../lib/errors";
 import { toastError, toastSuccess } from "../../lib/toast";
@@ -94,18 +96,16 @@ export const OrgFotosPage = () => {
             className={shared.cardPadded}
             style={{ borderColor: "#c8102e", color: "#c8102e", marginBottom: 16 }}
           >
-            ⚠ {error}
+            <Icon name="warning" /> {error}
           </div>
         )}
 
         <div className={shared.card}>
           {fotos === null ? (
-            <div style={{ padding: 24, color: "var(--pt-org-text-dim)" }}>
-              Carregando galeria…
-            </div>
+            <LoadingBlock message="Carregando galeria…" />
           ) : fotos.length === 0 ? (
             <EmptyState
-              icon="📷"
+              icon={<Icon name="camera" />}
               title="Nenhuma foto publicada ainda"
               hint="Publique as fotos do evento para que os participantes possam vê-las e baixá-las."
               action={
@@ -134,7 +134,7 @@ export const OrgFotosPage = () => {
                     onClick={() => setFotoExcluir(f)}
                     title="Remover foto"
                   >
-                    ✕
+                    <Icon name="close" />
                   </button>
                 </div>
               ))}

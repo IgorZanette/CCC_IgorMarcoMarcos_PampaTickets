@@ -2,10 +2,12 @@ import secrets
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import HTTPException, status
+from fastapi import BackgroundTasks, HTTPException, status
+from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.datetime_utils import aware_utc
+from app.integrations import email_service
 from app.models.cortesia import Cortesia
 from app.models.evento import StatusEvento
 from app.models.ingresso import Ingresso, StatusIngresso
@@ -26,6 +28,7 @@ async def emitir(
     organizador: Usuario,
     evento_id: uuid.UUID,
     data: CortesiaCreate,
+    background_tasks: BackgroundTasks | None = None,
 ) -> Cortesia:
     evento = await _validar_ownership_evento(db, organizador, evento_id)
 
@@ -95,6 +98,21 @@ async def emitir(
     await db.commit()
 
     await ingresso_service.gerar_pdf_ingresso_upload(db, str(ingresso.id))
+
+    # Entrega o ingresso (PDF + QR) por email ao beneficiado. O payload é montado
+    # aqui (ainda com a sessão aberta) e o envio SMTP roda em background — assim
+    # a resposta ao organizador não bloqueia no servidor de email.
+    if background_tasks is not None:
+        try:
+            payload = await ingresso_service.montar_email_ingresso(db, str(ingresso.id))
+            if payload is not None:
+                background_tasks.add_task(
+                    email_service.enviar_ingresso_por_email, **payload
+                )
+        except Exception:
+            logger.exception(
+                "Falha ao preparar email da cortesia (ingresso_id={})", ingresso.id
+            )
 
     cortesia_carregada = await cortesia_repo.get_by_id(db, cortesia.id)
     assert cortesia_carregada is not None

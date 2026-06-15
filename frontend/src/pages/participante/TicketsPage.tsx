@@ -3,6 +3,8 @@ import { Link, useLocation, useParams } from "react-router-dom";
 
 import { obterEvento, type Evento } from "../../api/eventos";
 import { obterPedido, type Pedido } from "../../api/pedidos";
+import { Icon } from "../../components/Icon";
+import { LoadingBlock } from "../../components/Spinner";
 import { extractErrorMessage } from "../../lib/errors";
 import { dateLong, money } from "../../lib/format";
 
@@ -48,7 +50,7 @@ export const TicketsPage = () => {
     }
   };
 
-  if (!ev) return <div className={styles.empty}>Carregando…</div>;
+  if (!ev) return <LoadingBlock message="Carregando ingressos…" />;
 
   const status = pedido?.status;
   const pago = status === "PAGO";
@@ -56,7 +58,9 @@ export const TicketsPage = () => {
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <div className={styles.checkmark}>{pago ? "✓" : "⏳"}</div>
+        <div className={styles.checkmark}>
+          <Icon name={pago ? "check" : "hourglass"} />
+        </div>
         <h1 className={styles.title}>
           {pago ? "Pedido confirmado!" : "Pedido recebido"}
         </h1>
@@ -102,7 +106,11 @@ export const TicketsPage = () => {
         </div>
       </section>
 
-      {error && <div className={styles.errorMsg}>⚠ {error}</div>}
+      {error && (
+        <div className={styles.errorMsg}>
+          <Icon name="warning" /> {error}
+        </div>
+      )}
 
       <div className={styles.actions}>
         {invoiceUrl && !pago && (

@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { redefinirSenha } from "../../api/auth";
 import { extractErrorMessage } from "../../lib/errors";
+import { Icon } from "../../components/Icon";
 import { AuthShell } from "./AuthShell";
 import forms from "./forms.module.css";
 
@@ -78,7 +79,7 @@ export const ResetPasswordPage = () => {
       >
         <div style={{ textAlign: "center", padding: "20px 0" }}>
           <p style={{ color: "var(--pt-success)", fontSize: 14, fontWeight: 600 }}>
-            ✓ Senha redefinida com sucesso
+            <Icon name="check" /> Senha redefinida com sucesso
           </p>
         </div>
       </AuthShell>
@@ -131,7 +132,11 @@ export const ResetPasswordPage = () => {
             required
           />
         </div>
-        {error && <div className={forms.error}>⚠ {error}</div>}
+        {error && (
+          <div className={forms.error}>
+            <Icon name="warning" /> {error}
+          </div>
+        )}
         <button type="submit" className={forms.primary} disabled={loading}>
           {loading ? "Redefinindo…" : "Redefinir Senha →"}
         </button>

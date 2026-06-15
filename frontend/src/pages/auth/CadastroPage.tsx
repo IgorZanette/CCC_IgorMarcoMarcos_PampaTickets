@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { cadastro, type Perfil } from "../../api/auth";
 import { extractErrorMessage } from "../../lib/errors";
+import { Icon } from "../../components/Icon";
 import { AuthShell } from "./AuthShell";
 import forms from "./forms.module.css";
 
@@ -138,7 +139,11 @@ export const CadastroPage = () => {
           />
         </div>
 
-        {error && <div className={forms.error}>⚠ {error}</div>}
+        {error && (
+          <div className={forms.error}>
+            <Icon name="warning" /> {error}
+          </div>
+        )}
         <button type="submit" className={forms.primary} disabled={loading}>
           {loading ? "Criando…" : "Criar minha conta →"}
         </button>

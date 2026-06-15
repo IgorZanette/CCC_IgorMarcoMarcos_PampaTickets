@@ -2,7 +2,9 @@ import { useState } from "react";
 import { Link, useOutletContext, useParams } from "react-router-dom";
 
 import { baixarRelatorio } from "../../api/eventos";
+import { Icon } from "../../components/Icon";
 import { PageHeader } from "../../components/PageHeader";
+import { LoadingBlock } from "../../components/Spinner";
 import type { OrgOutlet } from "../../layouts/OrganizerLayout";
 import { extractErrorMessage } from "../../lib/errors";
 
@@ -32,7 +34,7 @@ export const FinancePage = () => {
       <>
         <PageHeader breadcrumb="Financeiro" title="Financeiro" />
         <div className={shared.body}>
-          <div className={shared.cardPadded}>Carregando…</div>
+          <LoadingBlock message="Carregando financeiro…" />
         </div>
       </>
     );
@@ -71,7 +73,7 @@ export const FinancePage = () => {
             className={shared.cardPadded}
             style={{ borderColor: "#c8102e", color: "#c8102e", marginBottom: 16 }}
           >
-            ⚠ {error}
+            <Icon name="warning" /> {error}
           </div>
         )}
 

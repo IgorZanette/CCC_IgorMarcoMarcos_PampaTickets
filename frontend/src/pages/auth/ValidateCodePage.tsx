@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { validarCodigoRecuperacao } from "../../api/auth";
 import { extractErrorMessage } from "../../lib/errors";
+import { Icon } from "../../components/Icon";
 import { AuthShell } from "./AuthShell";
 import forms from "./forms.module.css";
 
@@ -79,7 +80,11 @@ export const ValidateCodePage = () => {
             style={{ textAlign: "center", fontSize: 24, letterSpacing: 8, fontWeight: 600 }}
           />
         </div>
-        {error && <div className={forms.error}>⚠ {error}</div>}
+        {error && (
+          <div className={forms.error}>
+            <Icon name="warning" /> {error}
+          </div>
+        )}
         <button type="submit" className={forms.primary} disabled={loading}>
           {loading ? "Validando…" : "Validar →"}
         </button>

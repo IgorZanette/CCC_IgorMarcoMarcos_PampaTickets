@@ -11,6 +11,8 @@ import { listarLotes, type Lote } from "../../api/lotes";
 import { validarCupom, type CupomValidacao } from "../../api/cupons";
 import { listarFotos, type Foto } from "../../api/fotos";
 import { EventMap } from "../../components/EventMap";
+import { Icon } from "../../components/Icon";
+import { LoadingBlock, Spinner } from "../../components/Spinner";
 import { useCurrentUser } from "../../lib/auth-store";
 import { extractErrorMessage } from "../../lib/errors";
 import { dateFull, dateShort, money } from "../../lib/format";
@@ -129,7 +131,7 @@ export const EventoPage = () => {
   }
 
   if (!ev || !lotes) {
-    return <div className={styles.empty}>Carregando evento…</div>;
+    return <LoadingBlock message="Carregando evento…" />;
   }
 
   const d = dateFull(ev.data_inicio);
@@ -166,7 +168,7 @@ export const EventoPage = () => {
           <div>
             <h1 className={styles.title}>{ev.nome}</h1>
             <div className={styles.location}>
-              📍 {ev.local} · {cidadeFromLocal(ev.local)}
+              <Icon name="pin" /> {ev.local} · {cidadeFromLocal(ev.local)}
             </div>
           </div>
         </div>
@@ -183,7 +185,7 @@ export const EventoPage = () => {
                 Como chegar
               </h2>
               <p className={styles.lead} style={{ marginBottom: 12 }}>
-                📍 {ev.endereco_completo ?? ev.local}
+                <Icon name="pin" /> {ev.endereco_completo ?? ev.local}
               </p>
               <EventMap lat={ev.latitude} lon={ev.longitude} height={260} />
               <a
@@ -198,7 +200,7 @@ export const EventoPage = () => {
                   color: "var(--pt-accent)",
                 }}
               >
-                Abrir no mapa ↗
+                Abrir no mapa <Icon name="external" />
               </a>
             </>
           )}
@@ -228,7 +230,7 @@ export const EventoPage = () => {
                     <div className={styles.loteNome}>{l.nome}</div>
                     {acabando && (
                       <div className={styles.loteWarn}>
-                        ⚠ Apenas {restantes} restantes
+                        <Icon name="warning" /> Apenas {restantes} restantes
                       </div>
                     )}
                     {disp.rotulo && (
@@ -287,7 +289,9 @@ export const EventoPage = () => {
               para ver e baixar as fotos deste evento.
             </p>
           ) : fotos === null ? (
-            <p className={styles.lead}>Carregando galeria…</p>
+            <p className={styles.lead}>
+              <Spinner size={18} /> Carregando galeria…
+            </p>
           ) : fotos.length === 0 ? (
             <p className={styles.lead}>
               Nenhuma foto publicada para este evento ainda.
@@ -330,7 +334,8 @@ export const EventoPage = () => {
               {cupomAtivo ? (
                 <div className={styles.cupomAplicado}>
                   <span>
-                    ✓ <strong>{cupomAtivo.codigo}</strong> aplicado
+                    <Icon name="check" /> <strong>{cupomAtivo.codigo}</strong>{" "}
+                    aplicado
                   </span>
                   <button
                     type="button"
@@ -374,7 +379,11 @@ export const EventoPage = () => {
                   Faça login para validar um cupom.
                 </div>
               )}
-              {cupomErro && <div className={styles.cupomErro}>⚠ {cupomErro}</div>}
+              {cupomErro && (
+                <div className={styles.cupomErro}>
+                  <Icon name="warning" /> {cupomErro}
+                </div>
+              )}
             </div>
 
             {cupomAtivo && (
@@ -399,7 +408,7 @@ export const EventoPage = () => {
                 : "Selecione ingressos"}
             </button>
             <div className={styles.secure}>
-              🔒 Pagamento seguro · PIX, cartão ou boleto
+              <Icon name="lock" /> Pagamento seguro · PIX, cartão ou boleto
             </div>
           </div>
         </aside>
